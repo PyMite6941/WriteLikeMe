@@ -1,0 +1,30 @@
+{
+  "name": "@pymite6941/writelikeme",
+  "version": "1.0.0",
+  "description": "WriteLikeMe - Writing Style Visualizer. Generates SVG circles representing writing style characteristics (formality, complexity, creativity, etc.) with circle quantity and size showing category levels. Exportable for use with any AI model.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules test.js",
+    "generate": "node index.js",
+    "analyze": "node index.js analyze"
+  },
+  "keywords": [
+    "writing",
+    "style",
+    "visualizer",
+    "svg",
+    "AI",
+    "NPM",
+    "content analysis"
+  ],
+  "author": "Clyde AI Project",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  }
+}
