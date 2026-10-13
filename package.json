@@ -1,5 +1,5 @@
 {
-  "name": "@pymite6941/writelikeme",
+  "name": "@ai-clyde/writelikeme",
   "version": "1.0.0",
   "description": "WriteLikeMe - Writing Style Visualizer. Generates SVG circles representing writing style characteristics (formality, complexity, creativity, etc.) with circle quantity and size showing category levels. Exportable for use with any AI model.",
   "main": "index.js",
@@ -26,5 +26,10 @@
   "directories": {
     "doc": "docs",
     "test": "tests"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai-clyde/WriteLikeMe.git"
+  },
+  "homepage": "https://ai-clyde.github.io/WriteLikeMe/"
 }
