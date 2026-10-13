@@ -38,13 +38,26 @@ jobs:
       - name: Build documentation
         run: npx vitepress build docs
 
+      - name: Show build output (debug)
+        run: |
+          echo "Listing docs/.vitepress/dist"
+          ls -la docs/.vitepress/dist || true
+
+      - name: Prepare artifact for Pages
+        run: |
+          rm -rf out
+          mkdir out
+          cp -R docs/.vitepress/dist/* out/
+          echo "Listing out/"
+          ls -la out || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/.vitepress/dist
+          path: out
 
   deploy:
     environment:
