@@ -1,7 +1,7 @@
 export default {
   title: 'WriteLikeMe',
   description: 'Writing Style Visualizer - Generates SVG circles representing writing style characteristics',
-  base: '/WriteLikeMe/',
+  base: '/',
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
