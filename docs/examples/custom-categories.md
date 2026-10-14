@@ -1,7 +1,7 @@
 # Custom Categories
 
-Pass custom scores to control the six score bands in the generated code. Scores should be
-numeric values from `0` to `1`; omitted categories use `0.5`.
+Pass custom scores to control the seven signal bands in the generated code.
+Scores should be numeric values from `0` to `1`; omitted categories use `0.5`.
 
 ```javascript
 const WriteLikeMe = require('@ai-clyde/writelikeme');
@@ -11,7 +11,8 @@ const svg = WriteLikeMe.generateStyleSVG({
   formality: 0.9,
   complexity: 0.3,
   sentence_length: 0,
-  creativity: 0.8
+  creativity: 0.8,
+  punctuation: 0.8
 });
 
 fs.writeFileSync('writelikeme-code.svg', svg);

@@ -1,6 +1,6 @@
 # WriteLikeMe
 
-**Writing Style Visualizer** - Generates a compact, dark, QR-inspired SVG code. Six bands of circles encode category scores through circle count and size; it is decorative, not a scannable QR code.
+**Writing Style Visualizer** - Generates a compact, dark, QR-inspired SVG code. Six circular bands encode style scores through circle count and size, while a seventh punctuation band distinguishes commas from periods. It is decorative, not a scannable QR code.
 
 [![npm version](https://img.shields.io/npm/v/@ai-clyde/writelikeme)](https://www.npmjs.com/package/@ai-clyde/writelikeme)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -40,9 +40,14 @@ Analyze a text string for writing style characteristics.
 - `vocabulary` (0-1): Unique-token count adjusted by text length
 - `tone` (0-1): Ratio of words in small positive/negative keyword lists
 - `creativity` (0-1): Vocabulary variety, imagery words, and punctuation variety
+- `punctuation` (0-1): Comma share among commas and periods; 0.5 when neither appears
 - `confidence` (0-1): Word count divided by 200, capped at 1; not statistical confidence
 - `wordCount`: Unicode letter/number token count
 - `charCount`: Trimmed UTF-16 code-unit count
+- `commaCount`, `periodCount`, and `commaShare`: punctuation counts and their balance
+
+The punctuation signal describes comma-versus-period habits, not grammatical
+correctness. The generated SVG represents commas and periods with different marks.
 
 The heuristics and keyword lists are experimental, English-focused, and can be
 inaccurate. They do not account for context, negation, or sarcasm and must not

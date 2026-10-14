@@ -64,6 +64,9 @@ const negative = analyzeText('This is a terrible, awful result.');
 const positive = analyzeText('This is a wonderful and helpful result!');
 const vivid = analyzeText('Bright dreams shimmer as the ocean whispers.');
 const plain = analyzeText('The report describes the process and lists several steps.');
+const commaHeavy = analyzeText('One, two, three, four, five.');
+const periodHeavy = analyzeText('One. Two. Three. Four. Five.');
+const noStops = analyzeText('One two three four five');
 
 assert.ok(formal.formality > casual.formality);
 assert.ok(formal.complexity > analyzeText('Short words here.').complexity);
@@ -71,8 +74,22 @@ assert.ok(formal.sentence_length > analyzeText('Brief. Clear.').sentence_length)
 assert.ok(formal.vocabulary > analyzeText('report report report report').vocabulary);
 assert.ok(positive.tone > negative.tone);
 assert.ok(vivid.creativity > plain.creativity);
+assert.ok(commaHeavy.punctuation > periodHeavy.punctuation);
+assert.equal(commaHeavy.commaCount, 4);
+assert.equal(commaHeavy.periodCount, 1);
+assert.equal(periodHeavy.commaCount, 0);
+assert.equal(periodHeavy.periodCount, 5);
+assert.equal(noStops.punctuation, 0.5);
+assert.equal(noStops.commaShare, 0.5);
+assert.equal(analyzeText('').punctuation, 0.5);
+const commaSvg = generateStyleSVG(commaHeavy);
+assert.equal((commaSvg.match(/data-punctuation="comma"/g) || []).length, 43);
+assert.equal((commaSvg.match(/data-punctuation="period"/g) || []).length, 11);
+const periodSvg = generateStyleSVG(periodHeavy);
+assert.equal((periodSvg.match(/data-punctuation="comma"/g) || []).length, 0);
+assert.equal((periodSvg.match(/data-punctuation="period"/g) || []).length, 54);
 
-Object.keys(analysis).filter(key => key !== 'wordCount' && key !== 'charCount').forEach(key => {
+Object.keys(analysis).filter(key => !['wordCount', 'charCount', 'commaCount', 'periodCount'].includes(key)).forEach(key => {
   assert.ok(analysis[key] >= 0 && analysis[key] <= 1, `${key} is within 0-1`);
 });
 console.log('Text signals produce distinct scores within the documented range.');

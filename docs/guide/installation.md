@@ -21,8 +21,9 @@ const svg = WriteLikeMe.generateStyleSVG(analysis);
 fs.writeFileSync('writelikeme-code.svg', svg);
 ```
 
-The analyzer uses text-length, token-variety, punctuation, and small English
-keyword heuristics. Results are approximate and not an AI assessment; see the
+The analyzer uses text-length, token-variety, comma/period balance, and small
+English keyword heuristics. Punctuation balance is not a grammar-correctness
+score. Results are approximate and not an AI assessment; see the
 [analyzeText reference](/api/analyze-text) for metric details and limitations.
 
 ## CommonJS import

@@ -14,7 +14,8 @@ var DEFAULT_STYLE_CATEGORIES = {
   sentence_length: 0.5,
   vocabulary: 0.5,
   tone: 0.5,
-  creativity: 0.5
+  creativity: 0.5,
+  punctuation: 0.5
 };
 
 var CATEGORY_NAMES = [
@@ -23,7 +24,8 @@ var CATEGORY_NAMES = [
   'sentence_length',
   'vocabulary',
   'tone',
-  'creativity'
+  'creativity',
+  'punctuation'
 ];
 
 var FORMAL_WORDS = new Set([
@@ -72,7 +74,10 @@ function emptyAnalysis() {
     ...DEFAULT_STYLE_CATEGORIES,
     confidence: 0,
     wordCount: 0,
-    charCount: 0
+    charCount: 0,
+    commaCount: 0,
+    periodCount: 0,
+    commaShare: 0.5
   };
 }
 
@@ -83,16 +88,16 @@ exports.generateStyleSVG = function(cats, width, height) {
   var svgHeight = Number.isFinite(height) && height > 0 ? height : 320;
   var codeSize = Math.min(svgWidth, svgHeight);
   var gridSize = 18;
-  var cellSize = codeSize * 0.04375;
+  var cellSize = codeSize * 0.036;
   var gridX = (svgWidth - cellSize * gridSize) / 2;
-  var gridY = Math.max(codeSize * 0.11, (svgHeight - cellSize * gridSize) / 2 - codeSize * 0.016);
+  var gridY = Math.max(codeSize * 0.14, (svgHeight - cellSize * gridSize * CATEGORY_NAMES.length * 3) / 2 - codeSize * 0.016);
   var cornerStart = codeSize * 0.05;
   var cornerArm = codeSize * 0.085;
-  var colors = [177, 188, 197, 165, 205, 153];
-  var categoryLabels = ['F', 'C', 'L', 'V', 'T', 'R'];
+  var colors = [177, 188, 197, 165, 205, 153, 35];
+  var categoryLabels = ['F', 'C', 'L', 'V', 'T', 'R', 'P'];
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgWidth + '" height="' + svgHeight + '" viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '">';
   svg += '<title>WriteLikeMe Code - decorative writing style profile</title>';
-  svg += '<desc>A square, QR-inspired pattern of circles. Six horizontal bands encode the writing profile. This is not a scannable QR code.</desc>';
+  svg += '<desc>A square, QR-inspired pattern encodes seven writing signals. The punctuation band uses comma shapes and period dots to show their balance. This is not a scannable QR code.</desc>';
   svg += '<defs><radialGradient id="code-bg"><stop offset="0%" stop-color="#14263a"/><stop offset="100%" stop-color="#080e19"/></radialGradient></defs>';
   svg += '<rect width="100%" height="100%" rx="' + (codeSize * 0.045) + '" fill="url(#code-bg)"/>';
   svg += '<path d="M' + cornerStart + ' ' + (cornerStart + cornerArm) + 'V' + cornerStart + 'h' + cornerArm +
@@ -120,7 +125,20 @@ exports.generateStyleSVG = function(cats, width, height) {
         var radius = isActive ? circleRadius : cellSize * 0.055;
         var opacity = isActive ? 0.55 + score * 0.4 : 0.2;
 
-        svg += '<circle class="signal-dot' + (isActive ? ' active' : '') + '" data-category="' + category + '" cx="' + cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="' + radius.toFixed(2) + '" fill="hsl(' + hue + ', 88%, ' + (isActive ? 62 : 32) + '%)" opacity="' + opacity.toFixed(2) + '"/>';
+        if (category === 'punctuation') {
+          if (isActive) {
+            svg += '<text class="signal-mark comma" data-category="punctuation" data-punctuation="comma" x="' +
+              (cx - cellSize * 0.3).toFixed(2) + '" y="' + (cy + cellSize * 0.3).toFixed(2) +
+              '" font-family="monospace" font-size="' + (cellSize * 0.9).toFixed(2) +
+              '" font-weight="700" fill="#f0b867">,</text>';
+          } else {
+            svg += '<circle class="signal-mark period" data-category="punctuation" data-punctuation="period" cx="' +
+              cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="' + (cellSize * 0.11).toFixed(2) +
+              '" fill="#73e0bd" opacity="0.72"/>';
+          }
+        } else {
+          svg += '<circle class="signal-dot' + (isActive ? ' active' : '') + '" data-category="' + category + '" cx="' + cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="' + radius.toFixed(2) + '" fill="hsl(' + hue + ', 88%, ' + (isActive ? 62 : 32) + '%)" opacity="' + opacity.toFixed(2) + '"/>';
+        }
       }
     }
 
@@ -128,7 +146,7 @@ exports.generateStyleSVG = function(cats, width, height) {
   });
 
   svg += '<text x="' + (svgWidth * 0.07) + '" y="' + (svgHeight * 0.94) + '" font-family="monospace" font-size="' + (codeSize * 0.035) + '" font-weight="700" letter-spacing="1" fill="#d9e5f2">WriteLikeMe Code</text>';
-  svg += '<text x="' + (svgWidth * 0.93) + '" y="' + (svgHeight * 0.94) + '" text-anchor="end" font-family="monospace" font-size="' + (codeSize * 0.02) + '" letter-spacing="1" fill="#73e0bd">6 SIGNALS // LOCAL</text>';
+  svg += '<text x="' + (svgWidth * 0.93) + '" y="' + (svgHeight * 0.94) + '" text-anchor="end" font-family="monospace" font-size="' + (codeSize * 0.02) + '" letter-spacing="1" fill="#73e0bd">7 SIGNALS // LOCAL</text>';
   svg += '</svg>';
   return svg;
 };
@@ -165,6 +183,11 @@ exports.analyzeText = function(text) {
   var lexicalDiversity = uniqueWords.size / Math.sqrt(wordCount);
   var punctuationKinds = new Set(trimmedText.match(/[.!?,;:—-]/gu) || []).size;
   var exclamationCount = (trimmedText.match(/!/gu) || []).length;
+  var commaCount = (trimmedText.match(/,/gu) || []).length;
+  var periodCount = (trimmedText.match(/\./gu) || []).length;
+  var commaShare = commaCount + periodCount === 0
+    ? 0.5
+    : commaCount / (commaCount + periodCount);
 
   var formality = (formalCount + 1) / (formalCount + casualCount + 2);
   var complexity = (
@@ -187,9 +210,13 @@ exports.analyzeText = function(text) {
     vocabulary: roundScore(vocabulary),
     tone: roundScore(tone),
     creativity: roundScore(creativity),
+    punctuation: roundScore(commaShare),
     confidence: roundScore(wordCount / 200),
     wordCount: wordCount,
-    charCount: trimmedText.length
+    charCount: trimmedText.length,
+    commaCount: commaCount,
+    periodCount: periodCount,
+    commaShare: roundScore(commaShare)
   };
 };
 

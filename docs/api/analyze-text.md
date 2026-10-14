@@ -24,12 +24,21 @@ const result = WriteLikeMe.analyzeText(text);
 | `vocabulary` | `number` (0-1) | Unique-token count adjusted by the square root of total token count |
 | `tone` | `number` (0-1) | Ratio of words in small positive/negative keyword lists; `0.5` if neither appears |
 | `creativity` | `number` (0-1) | Weighted combination of vocabulary variety, imagery keywords, and punctuation variety |
+| `punctuation` | `number` (0-1) | Share of commas among commas and periods; `0.5` when neither appears |
 | `confidence` | `number` (0-1) | Word count divided by 200, capped at 1; not statistical confidence |
 | `wordCount` | `number` | Count of Unicode letter/number tokens |
 | `charCount` | `number` | UTF-16 code-unit count after trimming leading and trailing whitespace |
+| `commaCount` | `number` | Number of comma characters |
+| `periodCount` | `number` | Number of period characters |
+| `commaShare` | `number` (0-1) | Same comma-to-period balance as `punctuation` |
 
 Non-string, empty, and whitespace-only input returns the default category values,
-zero confidence, and zero counts.
+zero confidence, zero word/character/punctuation counts, and neutral punctuation
+balance.
+
+The punctuation signal measures comma-versus-period habits, not grammatical
+correctness. Its SVG band uses comma-shaped marks and period dots to make that
+balance visually distinct.
 
 ## Example
 

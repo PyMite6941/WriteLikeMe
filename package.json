@@ -3,6 +3,10 @@
   "version": "1.0.2",
   "description": "WriteLikeMe - Writing Style Visualizer. Generates a QR-inspired style code with circular signals whose count and size encode writing-style scores.",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --experimental-vm-modules test.js",
     "generate": "node index.js",

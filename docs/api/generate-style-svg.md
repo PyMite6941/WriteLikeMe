@@ -1,7 +1,7 @@
 # generateStyleSVG
 
-Generate a compact, square, QR-inspired SVG code from the six writing-style
-category scores.
+Generate a compact, square, QR-inspired SVG code from seven writing-style
+signals.
 
 ## Syntax
 
@@ -18,15 +18,17 @@ const svg = WriteLikeMe.generateStyleSVG(categories, width, height);
 | `height` | `number` | `320` | SVG canvas height in pixels |
 
 Supported category keys are `formality`, `complexity`, `sentence_length`,
-`vocabulary`, `tone`, and `creativity`. A score of `0` is valid.
+`vocabulary`, `tone`, `creativity`, and `punctuation`. A score of `0` is valid.
 
 ## Returns
 
-A string containing a dark, square SVG. Its six horizontal bands correspond to
+A string containing a dark, square SVG. Its seven horizontal bands correspond to
 formality (F), complexity (C), sentence length (L), vocabulary (V), tone (T),
-and creativity (R). Each band contains 54 circular cells: the score determines
-how many are emphasized and their radius. The design is QR-inspired but is not
-a scannable QR code. The “WriteLikeMe Code” label appears at the bottom left.
+creativity (R), and punctuation balance (P). The first six bands contain 54
+circular cells each; score controls how many are emphasized and their radius.
+The punctuation band uses 54 comma marks and period dots, with the comma share
+controlled by the punctuation score. The design is QR-inspired but is not a
+scannable QR code. The “WriteLikeMe Code” label appears at the bottom left.
 
 ## Example
 

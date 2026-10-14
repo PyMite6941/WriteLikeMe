@@ -14,7 +14,8 @@ const categories = [
   ['sentence_length', 'Sentence length'],
   ['vocabulary', 'Vocabulary variety'],
   ['tone', 'Positive tone'],
-  ['creativity', 'Creativity signals']
+  ['creativity', 'Creativity signals'],
+  ['punctuation', 'Comma / period balance']
 ]
 
 onMounted(async () => {
@@ -81,6 +82,7 @@ function downloadSvg() {
       <div class="score-panel">
         <h3>Style profile</h3>
         <p class="count-summary">{{ profile.wordCount }} words · {{ profile.charCount }} characters</p>
+        <p class="count-summary punctuation-summary">{{ profile.commaCount }} commas · {{ profile.periodCount }} periods</p>
         <ul class="score-list">
           <li v-for="[key, label] in categories" :key="key">
             <div class="score-heading">
