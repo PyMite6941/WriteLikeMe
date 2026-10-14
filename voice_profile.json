@@ -1,0 +1,8 @@
+{
+  "persona": "Professional data analyst",
+  "common_starters": ["Basically", "Actually", "In terms of"],
+  "favored_words": ["consequently", "analysis", "insight", "metrics"],
+  "avoid": ["jargon", "slang"],
+  "sentence_length": "short (8-15 words)",
+  "preferred_structure": ["problem", "observation", "recommendation"]
+}
