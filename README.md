@@ -4,8 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/@ai-clyde/writelikeme)](https://www.npmjs.com/package/@ai-clyde/writelikeme)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/ai-clyde/WriteLikeMe)](https://github.com/ai-clyde/WriteLikeMe/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/ai-clyde/WriteLikeMe)](https://github.com/ai-clyde/WriteLikeMe/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/ai-clyde/WriteLikeMe)](https://github.com/PyMite6941/WriteLikeMe/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/ai-clyde/WriteLikeMe)](https://github.com/PyMite6941/WriteLikeMe/network/members)
 
 ## 📦 Quick Start
 
@@ -22,7 +22,7 @@ npm link /path/to/writeLikeMe
 # <script src="https://cdn.jsdelivr.net/npm/@ai-clyde/writelikeme/index.js"></script>
 
 # 4. Git clone + require (for self-hosted environments)
-# git clone https://github.com/ai-clyde/WriteLikeMe.git
+# git clone https://github.com/PyMite6941/WriteLikeMe.git
 # cd WriteLikeMe
 # node -e "const W = require('./index.js')"
 ```
@@ -186,12 +186,12 @@ const WriteLikeMe = require('@ai-clyde/writelikeme');
 npm install @ai-clyde/writelikeme
 
 # Or for development (before org publish):
-npm install @pymite6941/writelikeme  # personal scope
+npm install @ai-clyde/writelikeme  # personal scope
 ```
 
 ## 🐛 Bug Reports
 
-[Open a GitHub Issue](https://github.com/ai-clyde/WriteLikeMe/issues)
+[Open a GitHub Issue](https://github.com/PyMite6941/WriteLikeMe/issues)
 
 ## 🤝 Contributing
 
