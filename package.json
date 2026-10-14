@@ -8,6 +8,9 @@
     "generate": "node index.js",
     "analyze": "node index.js analyze"
   },
+  "bin": {
+    "writelike-me": "index.js"
+  },
   "keywords": [
     "writing",
     "style",
