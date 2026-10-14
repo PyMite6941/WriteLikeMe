@@ -1,3 +1,6 @@
+import DefaultTheme from 'vitepress/theme'
+import './custom.css'
+
 export default {
-  inherit: true,
+  extends: DefaultTheme,
 }

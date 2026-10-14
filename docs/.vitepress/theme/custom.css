@@ -1,0 +1,136 @@
+:root {
+  --vp-c-bg: #101827;
+  --vp-c-bg-alt: #0b1220;
+  --vp-c-bg-elv: #131f30;
+  --vp-c-bg-soft: #131f30;
+  --vp-c-text-1: #edf2f7;
+  --vp-c-text-2: #a9b6c8;
+  --vp-c-text-3: #8291a6;
+  --vp-c-border: #28374c;
+  --vp-c-divider: #28374c;
+  --vp-c-gutter: #0b1220;
+  --vp-c-brand-1: #73e0bd;
+  --vp-c-brand-2: #8ce9cc;
+  --vp-c-brand-3: #56cba7;
+  --vp-c-brand-soft: rgb(115 224 189 / 14%);
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-width: 320px;
+}
+
+.VPNav,
+.VPNavBar,
+.VPNavBar .content,
+.VPNavBar .divider {
+  background-color: #101827;
+}
+
+.VPNavBar {
+  border-bottom: 1px solid #28374c;
+}
+
+.VPNavBar .title,
+.VPNavBar .title a {
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup .text {
+  color: #a9b6c8;
+}
+
+.VPNavBar .VPNavBarMenuLink:not(:hover) {
+  color: #a9b6c8 !important;
+}
+
+.VPNavBarMenuLink:hover,
+.VPNavBarMenuGroup .text:hover {
+  color: #73e0bd;
+}
+
+.VPNavBarAppearance,
+.VPNavBarExtra {
+  display: none;
+}
+
+.VPNavBar .VPNavBarExtra {
+  display: none !important;
+}
+
+.VPHome .container {
+  width: min(1080px, calc(100% - 40px));
+  max-width: 1080px;
+  padding: 0;
+}
+
+.VPHero .name {
+  color: #73e0bd;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.VPHero .text {
+  max-width: 780px;
+  color: #edf2f7;
+  font-size: clamp(2.7rem, 7vw, 5.5rem);
+  line-height: 0.99;
+  letter-spacing: -0.065em;
+}
+
+.VPHero .tagline {
+  max-width: 650px;
+  color: #a9b6c8;
+  line-height: 1.7;
+}
+
+.VPHero .VPButton.brand {
+  border-color: #73e0bd;
+  background: #73e0bd;
+  color: #10231f;
+}
+
+.VPHero .VPButton.alt {
+  border-color: #28374c;
+  background: transparent;
+  color: #edf2f7;
+}
+
+.VPFeature {
+  border: 1px solid #28374c;
+  border-radius: 10px;
+  background: #131f30;
+}
+
+.VPFeature .title {
+  color: #edf2f7;
+}
+
+.VPFeature .details {
+  color: #a9b6c8;
+}
+
+.VPHome .vp-doc h2 {
+  margin-top: 0;
+  border-top: 1px solid #28374c;
+  padding-top: 48px;
+  font-size: 1.7rem;
+  letter-spacing: -0.035em;
+}
+
+.VPHome .vp-doc h3 {
+  margin-top: 32px;
+  font-size: 1rem;
+}
+
+.VPHome .vp-doc p {
+  color: #a9b6c8;
+  line-height: 1.65;
+}

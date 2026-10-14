@@ -1,6 +1,7 @@
 # generateStyleSVG
 
-Generate an SVG visualizer representing writing style characteristics as circles.
+Generate a compact, square, QR-inspired SVG code from the six writing-style
+category scores.
 
 ## Syntax
 
@@ -12,25 +13,30 @@ const svg = WriteLikeMe.generateStyleSVG(categories, width, height);
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `categories` | `object` | `{}` | Object with category weights (0-1) |
-| `width` | `number` | `400` | SVG canvas width |
-| `height` | `number` | `400` | SVG canvas height |
+| `categories` | `object` | `{}` | Category weights from `0` to `1`; omitted categories default to `0.5` |
+| `width` | `number` | `320` | SVG canvas width in pixels |
+| `height` | `number` | `320` | SVG canvas height in pixels |
+
+Supported category keys are `formality`, `complexity`, `sentence_length`,
+`vocabulary`, `tone`, and `creativity`. A score of `0` is valid.
 
 ## Returns
 
-A string containing valid SVG markup with:
-- 6 colored circles representing: formality, complexity, sentence_length, vocabulary, tone, creativity
-- Labels below each circle showing the percentage value
-- Central export message
+A string containing a dark, square SVG. Its six horizontal bands correspond to
+formality (F), complexity (C), sentence length (L), vocabulary (V), tone (T),
+and creativity (R). Each band contains 54 circular cells: the score determines
+how many are emphasized and their radius. The design is QR-inspired but is not
+a scannable QR code. The “WriteLikeMe Code” label appears at the bottom left.
 
 ## Example
 
 ```javascript
-import WriteLikeMe from '@pymite6941/writelikeme';
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+const fs = require('fs');
 
-const analysis = WriteLikeMe.analyzeText('Your text here');
-const svg = WriteLikeMe.generateStyleSVG(analysis);
+const profile = WriteLikeMe.analyzeText('A sample sentence.');
+const svg = WriteLikeMe.generateStyleSVG(profile);
+fs.writeFileSync('writelikeme-code.svg', svg);
+```
 
-document.body.innerHTML = svg;
-/* Output: SVG with 6 circles showing formality, complexity, etc. */
-*/
+Category scores are expected to be numeric values from `0` through `1`.

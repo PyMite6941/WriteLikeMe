@@ -1,16 +1,23 @@
 # Basic Usage
 
+Analyze text, create an SVG, and save it to a file:
+
 ```javascript
-import WriteLikeMe from '@pymite6941/writelikeme';
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+const fs = require('fs');
 
-// Example 1: Analyze text and generate SVG
-const text = "This is a formal business proposal regarding quarterly financial results.";
-const analysis = WriteLikeMe.analyzeText(text);
-const svg = WriteLikeMe.generateStyleSVG(analysis);
+const text = 'A sample paragraph to inspect.';
+const profile = WriteLikeMe.analyzeText(text);
+const svg = WriteLikeMe.generateStyleSVG(profile);
 
-// Display in HTML
-document.body.innerHTML = '<div>' + svg + '</div>';
-
-console.log('Style analysis:', analysis);
-// Output: { formality: 0.8, complexity: 0.6, ... }
+console.log(profile);
+fs.writeFileSync('writelikeme-code.svg', svg);
 ```
+
+The analyzer uses simple text-shape and English keyword heuristics. Results are
+experimental rather than AI assessments. See the [analyzeText API reference](/api/analyze-text)
+before interpreting the scores.
+
+The published entry point is CommonJS, not a standalone browser script. Use a
+frontend build tool that supports CommonJS dependencies to include it in a
+browser application.

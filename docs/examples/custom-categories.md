@@ -1,21 +1,23 @@
 # Custom Categories
 
-You can customize which categories to display and their weights:
+Pass custom scores to control the six score bands in the generated code. Scores should be
+numeric values from `0` to `1`; omitted categories use `0.5`.
 
 ```javascript
-import WriteLikeMe from '@pymite6941/writelikeme';
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+const fs = require('fs');
 
-// Analyze text
-const analysis = WriteLikeMe.analyzeText('Your text here');
-
-// Generate SVG with custom category weights
 const svg = WriteLikeMe.generateStyleSVG({
-  formality: 0.9,   // Very formal
-  complexity: 0.3,  // Simple vocabulary
-  creativity: 0.8,  // High creativity
-  // Other categories use defaults (0.5)
+  formality: 0.9,
+  complexity: 0.3,
+  sentence_length: 0,
+  creativity: 0.8
 });
 
-// The SVG will show customized circle sizes/colors
-document.body.innerHTML = '<div>' + svg + '</div>';
+fs.writeFileSync('writelikeme-code.svg', svg);
 ```
+
+Values in this example are supplied directly to customize the generated SVG.
+The analyzer can also provide heuristic scores for each category. See the
+[generateStyleSVG API reference](/api/generate-style-svg) for supported keys
+and defaults.

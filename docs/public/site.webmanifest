@@ -1,0 +1,17 @@
+{
+  "name": "WriteLikeMe",
+  "short_name": "WriteLikeMe",
+  "start_url": "/WriteLikeMe/",
+  "scope": "/WriteLikeMe/",
+  "display": "standalone",
+  "background_color": "#101827",
+  "theme_color": "#101827",
+  "icons": [
+    {
+      "src": "/WriteLikeMe/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,4 +1,7 @@
-import { generateStyleSVG, analyzeText } from './index.js';
+import assert from 'assert';
+import WriteLikeMe from './index.js';
+
+const { generateStyleSVG, analyzeText } = WriteLikeMe;
 
 // Test 1: Analyze sample text
 console.log('=== Test 1: Text Analysis ===');
@@ -30,10 +33,53 @@ const customSvg = generateStyleSVG({
   tone: 0.7
 });
 console.log('Custom SVG generated, length:', customSvg.length, 'chars');
+const zeroScoreSvg = generateStyleSVG({ formality: 0 });
+const mediumScoreSvg = generateStyleSVG({ formality: 0.5 });
+const fullScoreSvg = generateStyleSVG({ formality: 1 });
+const getSignalDots = (markup, category) => Array.from(
+  markup.matchAll(new RegExp(`<circle[^>]*data-category="${category}"[^>]*>`, 'g')),
+  ([circle]) => ({
+    active: circle.includes('class="signal-dot active"'),
+    radius: Number(circle.match(/\br="([0-9.]+)"/)[1])
+  })
+);
+const zeroDots = getSignalDots(zeroScoreSvg, 'formality');
+const mediumDots = getSignalDots(mediumScoreSvg, 'formality');
+const fullDots = getSignalDots(fullScoreSvg, 'formality');
+assert.equal(zeroDots.length, 54);
+assert.equal(zeroDots.filter(dot => dot.active).length, 0);
+assert.equal(mediumDots.filter(dot => dot.active).length, 27);
+assert.equal(fullDots.filter(dot => dot.active).length, 54);
+assert.ok(fullDots[0].radius > mediumDots[0].radius);
+assert.match(fullScoreSvg, /width="320" height="320"/);
+assert.match(fullScoreSvg, /WriteLikeMe Code/);
+assert.match(fullScoreSvg, /not a scannable QR code/i);
 console.log('');
 
-// Test 5: Empty/Invalid text
-console.log('=== Test 5: Invalid Input ===');
+// Test 5: Text characteristics produce distinct, bounded scores.
+console.log('=== Test 5: Heuristic Scores ===');
+const formal = analyzeText('Furthermore, this report requires a comprehensive review of the evidence.');
+const casual = analyzeText('Yeah, this is cool and awesome!');
+const negative = analyzeText('This is a terrible, awful result.');
+const positive = analyzeText('This is a wonderful and helpful result!');
+const vivid = analyzeText('Bright dreams shimmer as the ocean whispers.');
+const plain = analyzeText('The report describes the process and lists several steps.');
+
+assert.ok(formal.formality > casual.formality);
+assert.ok(formal.complexity > analyzeText('Short words here.').complexity);
+assert.ok(formal.sentence_length > analyzeText('Brief. Clear.').sentence_length);
+assert.ok(formal.vocabulary > analyzeText('report report report report').vocabulary);
+assert.ok(positive.tone > negative.tone);
+assert.ok(vivid.creativity > plain.creativity);
+
+Object.keys(analysis).filter(key => key !== 'wordCount' && key !== 'charCount').forEach(key => {
+  assert.ok(analysis[key] >= 0 && analysis[key] <= 1, `${key} is within 0-1`);
+});
+console.log('Text signals produce distinct scores within the documented range.');
+console.log('');
+
+// Test 6: Empty/Invalid text
+console.log('=== Test 6: Invalid Input ===');
 const invalid = analyzeText('');
 console.log('Invalid input analysis:', JSON.stringify(invalid));
 console.log('All tests passed!');

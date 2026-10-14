@@ -1,23 +1,41 @@
-# Installation
+# Installation and quick start
 
 ```bash
-# Install WriteLikeMe via npm
-npm install @pymite6941/writelikeme
-
-# Or use from local path
-npm link /home/pymite6941/services/local_storage/WriteLikeMe
+npm install @ai-clyde/writelikeme
 ```
 
-## Quick Start
+WriteLikeMe currently ships as a CommonJS package and supports Node.js 14 or newer.
+Use a CommonJS `require` in Node.js, or import the package from a frontend project
+that bundles CommonJS dependencies. The published entry is not a standalone browser
+script, so adding it directly with a `<script src="...">` tag is not supported.
+
+## Analyze text and write an SVG
 
 ```javascript
-import WriteLikeMe from '@pymite6941/writelikeme';
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+const fs = require('fs');
 
-// Analyze text writing style
 const analysis = WriteLikeMe.analyzeText('Your text here');
-console.log(analysis);
-
-// Generate SVG visualizer
 const svg = WriteLikeMe.generateStyleSVG(analysis);
-document.body.innerHTML = svg;
+
+fs.writeFileSync('writelikeme-code.svg', svg);
+```
+
+The analyzer uses text-length, token-variety, punctuation, and small English
+keyword heuristics. Results are approximate and not an AI assessment; see the
+[analyzeText reference](/api/analyze-text) for metric details and limitations.
+
+## CommonJS import
+
+```javascript
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+const result = WriteLikeMe.analyzeText('A sample sentence.');
+```
+
+## ES module import
+
+Node.js can import the CommonJS default export:
+
+```javascript
+import WriteLikeMe from '@ai-clyde/writelikeme';
 ```
