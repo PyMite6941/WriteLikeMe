@@ -1,6 +1,6 @@
-var module = { exports: {} };
-var exports = module.exports;
+// WriteLikeMe Writing Style Visualizer
 
+// Default style categories
 var DEFAULT_STYLE_CATEGORIES = {
   formality: 0.5,
   complexity: 0.5,
@@ -62,12 +62,12 @@ exports.analyzeText = function(t) {
   var FW=['therefore','hence','consequently','furthermore','nevertheless','Moreover','However','Nevertheless'];
   var EI=['!','wow','amazing','fantastic','love','hate','excited','delighted'];
   L.forEach(function(li){
-    var wds=L.split(/\s+/).filter(function(w){return w.length>0});
-    FW.forEach(function(f){if(li.toLowerCase().includes(f))FC++});
-    EI.forEach(function(i){if(li.toLowerCase().includes(i))EWC++});
-  });
-  var F=Math.min(1,Math.max(0,(FC/Math.max(1,TW))*3);
-  var C=Math.min(1,Math.max(0,(TW-Math.min(TW,50)/Math.max(1,TW))*4);
+      var wds=li.split(/\\s+/).filter(function(w){return w.length>0});
+      FW.forEach(function(f){if(li.toLowerCase().includes(f))FC++});
+      EI.forEach(function(i){if(li.toLowerCase().includes(i))EWC++});
+    });
+  var F=Math.min(1,Math.max(0,(FC/Math.max(1,TW))*3));
+  var C=Math.min(1,Math.max(0,(TW-Math.min(TW,50)/Math.max(1,TW))*4));
   var Conf=Math.min(1,TW/200);
   return {formality:Math.round(F*100)/100,complexity:Math.round(C*100)/100,sentence_length:Math.round(0.5*100)/100,vocabulary:Math.round(0.5*100)/100,tone:Math.round(0.5*100)/100,creativity:Math.round(0.5*100)/100,confidence:Math.round(Conf*100)/100,wordCount:TW,charCount:s.length};
 };

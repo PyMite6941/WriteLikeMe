@@ -6,7 +6,8 @@ export default {
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'API', link: '/api/' },
-      { text: 'Examples', link: '/examples/' }
+      { text: 'Examples', link: '/examples/' },
+      { text: 'AI Code', link: '/examples/ai-code' }
     ],
     sidebar: {
       '/guide/': [
