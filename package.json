@@ -1,6 +1,6 @@
 {
   "name": "@ai-clyde/writelikeme",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WriteLikeMe - Writing Style Visualizer. Generates SVG circles representing writing style characteristics with circle quantity and size showing the level of each category.",
   "main": "index.js",
   "scripts": {
