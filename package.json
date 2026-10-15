@@ -1,20 +1,22 @@
 {
   "name": "@ai-clyde/writelikeme",
-  "version": "1.0.2",
-  "description": "WriteLikeMe - Writing Style Visualizer. Generates a QR-inspired style code with circular signals whose count and size encode writing-style scores.",
+  "version": "1.0.3",
+  "description": "Analyze writing locally, share style profiles in SVG metadata, and create deterministic style-guided drafts without an external AI service.",
   "main": "index.js",
   "files": [
+    "cli.js",
     "index.js",
     "README.md"
   ],
   "scripts": {
-    "test": "node --experimental-vm-modules test.js",
-    "generate": "node index.js",
-    "analyze": "node index.js analyze",
+    "test": "node test.js",
+    "generate": "node cli.js generate",
+    "analyze": "node cli.js analyze",
+    "write": "node cli.js write",
     "docs:build": "node scripts/copy-browser.js && vitepress build docs"
   },
   "bin": {
-    "writelike-me": "index.js"
+    "writelike-me": "cli.js"
   },
   "keywords": [
     "writing",
@@ -23,7 +25,10 @@
     "svg",
     "AI",
     "NPM",
-    "content analysis"
+    "content analysis",
+    "offline writing",
+    "style profile",
+    "text generation"
   ],
   "author": "Clyde AI Project",
   "license": "MIT",
@@ -36,9 +41,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PyMite6941/WriteLikeMe.git"
+    "url": "git+https://github.com/PyMite6941/WriteLikeMe.git"
   },
-  "homepage": "https://pymite6941.is-a.dev/WriteLikeMe/",
+  "homepage": "https://pymite6941.github.io/WriteLikeMe/",
   "devDependencies": {
     "vitepress": "^1.6.4"
   },

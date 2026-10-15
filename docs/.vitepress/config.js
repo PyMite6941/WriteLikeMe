@@ -1,12 +1,18 @@
+const configuredBase = process.env.VITEPRESS_BASE === undefined
+  ? '/WriteLikeMe/'
+  : process.env.VITEPRESS_BASE;
+const baseSegments = configuredBase.split('/').filter(Boolean);
+const base = baseSegments.length ? '/' + baseSegments.join('/') + '/' : '/';
+
 export default {
   title: 'WriteLikeMe',
-  description: 'Analyze writing style and create a compact, QR-inspired WriteLikeMe Code.',
-  base: '/WriteLikeMe/',
+  description: 'Analyze writing locally, share style profiles, and create style-guided drafts.',
+  base,
   appearance: 'dark',
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/WriteLikeMe/favicon.svg' }],
-    ['link', { rel: 'apple-touch-icon', href: '/WriteLikeMe/apple-touch-icon.svg' }],
-    ['link', { rel: 'manifest', href: '/WriteLikeMe/site.webmanifest' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: base + 'favicon.svg' }],
+    ['link', { rel: 'apple-touch-icon', href: base + 'apple-touch-icon.svg' }],
+    ['link', { rel: 'manifest', href: base + 'site.webmanifest' }],
     ['meta', { name: 'theme-color', content: '#101827' }]
   ],
   themeConfig: {
@@ -34,7 +40,8 @@ export default {
         text: 'API Reference',
         items: [
           { text: 'analyzeText', link: '/api/analyze-text' },
-          { text: 'generateStyleSVG', link: '/api/generate-style-svg' }
+          { text: 'generateStyleSVG', link: '/api/generate-style-svg' },
+          { text: 'Style code and local writing', link: '/api/style-code' }
         ]
       }],
       '/examples/': [

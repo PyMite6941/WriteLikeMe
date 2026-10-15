@@ -1,15 +1,13 @@
-import fs from 'fs';
-const content = fs.readFileSync('/home/pymite6941/services/local_storage/WriteLikeMe/index.js', 'utf8');
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 
-// Check if exports are at module level
-console.log('Has module.exports:', content.includes('module.exports'));
-console.log('Has exports.generateStyleSVG:', content.includes('exports.generateStyleSVG'));
-console.log('Has Has exports.analyzeText:', content.includes('exports.analyzeText'));
+const require = createRequire(import.meta.url);
+const WriteLikeMe = require('./index.js');
 
-// Extract the export lines
-const lines = content.split('\n');
-lines.forEach((line, i) => {
-  if (line.includes('module.exports') || line.includes('exports.')) {
-    console.log('Line ' + (i+1) + ': ' + line);
-  }
-});
+assert.equal(typeof WriteLikeMe.analyzeText, 'function');
+assert.equal(typeof WriteLikeMe.generateStyleSVG, 'function');
+assert.equal(typeof WriteLikeMe.DEFAULT_STYLE_CATEGORIES, 'object');
+assert.equal(WriteLikeMe.analyzeText('').wordCount, 0);
+assert.match(WriteLikeMe.generateStyleSVG(), /<svg\b/);
+
+console.log('WriteLikeMe CommonJS exports verified.');

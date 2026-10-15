@@ -21,10 +21,38 @@ const svg = WriteLikeMe.generateStyleSVG(analysis);
 fs.writeFileSync('writelikeme-code.svg', svg);
 ```
 
-The analyzer uses text-length, token-variety, comma/period balance, and small
-English keyword heuristics. Punctuation balance is not a grammar-correctness
-score. Results are approximate and not an AI assessment; see the
-[analyzeText reference](/api/analyze-text) for metric details and limitations.
+The analyzer returns seven broad scores plus additional voice cues such as
+pronoun use, contractions, sentence variation, paragraph length, punctuation,
+transitions, hedging, and frequent content words. The SVG shows seven broad
+scores and stores the full profile in versioned metadata. Use
+`compareTextStyle(referenceText, candidateText)` to compare a draft against a
+reference sample. The analyzer and comparison use experimental heuristics;
+they do not call an AI model or evaluate meaning. The built-in
+`writeLikeMe(prompt, profile)` function creates a separate, deterministic,
+template-based draft locally; it is not a language model. Punctuation balance
+is not a grammar-correctness score. See the [analyzeText reference](/api/analyze-text)
+and [style code guide](/api/style-code) for details and limitations.
+
+## Command line
+
+The package also installs the `writelike-me` command. The style-guided writer
+uses the profile JSON embedded in a generated SVG and runs locally:
+
+```bash
+writelike-me analyze "A sample paragraph to analyze."
+writelike-me generate "A sample paragraph to visualize." > writelikeme-code.svg
+writelike-me write --style-code writelikeme-code.svg "Write a short paragraph about community gardens."
+```
+
+`analyze` prints the scores as JSON. `generate` writes an SVG to standard output;
+without text it uses the default style profile. `write` produces a deterministic
+template-based draft without calling an AI service. Its output is limited and
+does not reliably follow complex instructions. In a local checkout, use
+`npm run analyze -- "text"`, `npm run generate -- "text"`, and
+`npm run write -- --style-code file.svg "prompt"`.
+
+The SVG metadata contains the profile JSON and frequent words, not the original
+sample. Inspect the file before sharing it.
 
 ## CommonJS import
 
