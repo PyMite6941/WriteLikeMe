@@ -23,6 +23,9 @@ features:
     details: Preview the seven-band circular pattern, copy runnable JavaScript, and download the square SVG.
   - title: Write and compare drafts
     details: Create a simple template-based draft locally, or compare another draft against the user's sample with heuristic signals.
+  - title: Works in your AI coding agent
+    details: A built-in MCP server and CLI give Claude Code, Cursor, Codex, Qwen Code and others a ~100-token style brief, so the model writes in your voice.
+    link: /api/harness-commands
   - title: Run it locally
     details: Text is analyzed in your browser; the demo does not send it to a server or call an AI model.
 ---
@@ -59,5 +62,9 @@ const profile = WriteLikeMe.analyzeText(text);
 const svg = WriteLikeMe.generateStyleSVG(profile);
 fs.writeFileSync('writelikeme-code.svg', svg);
 ```
+
+Using an AI coding agent? Register the MCP server in one line, for example
+`claude mcp add writelikeme -- npx -y @ai-clyde/writelikeme mcp`. The
+[AI harness guide](/api/harness-commands) covers Cursor, Codex, Qwen Code and others.
 
 Explore the [installation guide](/guide/installation), [API reference](/api/analyze-text), [style-code and local-writing guide](/api/style-code), and [examples](/examples/basic-usage) for more details.

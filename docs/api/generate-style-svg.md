@@ -29,13 +29,16 @@ circular cells each; score controls how many are emphasized and their radius.
 The punctuation band uses 54 comma marks and period dots, with the comma share
 controlled by the punctuation score. The design is QR-inspired but is not a
 scannable QR code. The “WriteLikeMe Code” label appears at the bottom left.
-The SVG also contains a versioned JSON profile in a `<metadata>` element. When
-the input is an `analyzeText` result, this metadata includes its voice cues and
-frequent words as well as the seven visible category scores. Review the metadata
+The SVG also contains a versioned JSON profile in a `<metadata>` element
+(schema v3). When the input is an `analyzeText` result, this metadata includes
+the seven visible category scores plus voice cues, habit signals, grammar
+mistake signals, sentence-structure signals, readability metrics, style
+classification, domain detection, and frequent words. Review the metadata
 before sharing: frequent words may reveal information about the source text.
 
 Use `readStyleCode(svg)` to retrieve the profile. SVGs created before metadata
-was added are read as an approximate seven-category profile.
+was added are read as an approximate seven-category profile (legacy v1, upgraded
+to v3).
 
 ## Example
 

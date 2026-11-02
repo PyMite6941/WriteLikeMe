@@ -103,10 +103,16 @@ assert.equal((periodSvg.match(/data-punctuation="period"/g) || []).length, 54);
 
 Object.keys(analysis).filter(key => ![
   'wordCount', 'charCount', 'commaCount', 'periodCount', 'semicolonCount',
-  'colonCount', 'dashCount', 'questionCount', 'exclamationCount'
+  'colonCount', 'dashCount', 'questionCount', 'exclamationCount',
+  'punctuationBreakdown', 'vocabularyBreakdown', 'readability', 'styleClassification',
+  'domain'
 ].includes(key)).forEach(key => {
   if (key === 'frequentWords') {
     assert.ok(Array.isArray(analysis[key]));
+    return;
+  }
+  if (typeof analysis[key] === 'object') {
+    assert.ok(analysis[key] !== null, `${key} is an object`);
     return;
   }
   assert.ok(analysis[key] >= 0 && analysis[key] <= 1, `${key} is within 0-1`);
@@ -131,6 +137,9 @@ const oppositeComparison = compareTextStyle(userVoice, oppositeDraft);
 assert.ok(voice.first_person > 0);
 assert.ok(voice.contraction_rate > 0);
 assert.ok(analyzeText('I’m ready.').contraction_rate > 0);
+assert.ok(analyzeText("That's it. Here's why it's done.").contraction_rate > 0, "'s contractions count");
+assert.strictEqual(analyzeText("John's report and the team's plan are ready.").contraction_rate, 0, 'possessives are not contractions');
+assert.match(require("./index.js").describeStyle(analyzeText("Honestly, I think it's simple. You build it, you ship it, and that's it. I didn't plan much. Here's what I've learned: don't overthink it, and you'll be fine.")), /use contractions/);
 assert.ok(voice.sentence_variation > 0);
 assert.ok(voice.paragraph_length > analyzeText('A short line.\n\nAnother short line.').paragraph_length);
 assert.ok(voice.frequentWords.includes('review'));
@@ -191,10 +200,10 @@ const styleCode = generateStyleSVG({
   frequentWords: ["user's", 'review']
 });
 const decodedStyle = readStyleCode(styleCode);
-assert.equal(decodedStyle.schemaVersion, 1);
+assert.equal(decodedStyle.schemaVersion, 3);
 assert.equal(decodedStyle.categories.formality, voice.formality);
 assert.equal(decodedStyle.signals.first_person, voice.first_person);
-assert.deepEqual(decodedStyle.frequentWords, ["user's", 'review']);
+assert.deepEqual(decodedStyle.frequentWords.map(function(w) { return w.word; }), ["user's", 'review']);
 const legacyStyle = readStyleCode(
   styleCode.replace(/<metadata\b[^>]*>[\s\S]*?<\/metadata\s*>/i, '')
 );
@@ -204,10 +213,24 @@ Object.keys(decodedStyle.categories).forEach(category => {
     `${category} survives the legacy SVG round-trip within one signal cell`
   );
 });
-assert.throws(
-  () => readStyleCode(styleCode.replace('&quot;schemaVersion&quot;:1', '&quot;schemaVersion&quot;:2')),
-  /Unsupported or invalid/
-);
+// v3 is now a valid schema; v3 round-trip preserves it.
+const v3svg = styleCode.replace('&quot;schemaVersion&quot;:1', '&quot;schemaVersion&quot;:3');
+const decodedV3 = readStyleCode(v3svg);
+assert.equal(decodedV3.schemaVersion, 3);
+assert.equal(decodedV3.categories.formality, decodedStyle.categories.formality);
+
+// Grammar and sentence-structure signals are present and bounded.
+assert.ok(decodedStyle.signals.comma_splice_rate >= 0 && decodedStyle.signals.comma_splice_rate <= 1);
+assert.ok(decodedStyle.signals.semicolon_spam_rate >= 0 && decodedStyle.signals.semicolon_spam_rate <= 1);
+assert.ok(decodedStyle.signals.run_on_sentence_rate >= 0 && decodedStyle.signals.run_on_sentence_rate <= 1);
+assert.ok(decodedStyle.signals.simple_sentence_rate >= 0 && decodedStyle.signals.simple_sentence_rate <= 1);
+assert.ok(decodedStyle.signals.compound_sentence_rate >= 0 && decodedStyle.signals.compound_sentence_rate <= 1);
+assert.ok(decodedStyle.signals.complex_sentence_rate >= 0 && decodedStyle.signals.complex_sentence_rate <= 1);
+assert.ok(decodedStyle.signals.punctuation_rhythm >= 0 && decodedStyle.signals.punctuation_rhythm <= 1);
+assert.ok(decodedStyle.signals.quote_style === 0 || decodedStyle.signals.quote_style === 1);
+assert.ok(typeof decodedStyle.domain === 'string');
+assert.ok(typeof decodedStyle.readability.gradeLabel === 'string');
+assert.ok(typeof decodedStyle.styleClassification.gradeLabel === 'string');
 
 const writingPrompt = 'Write a short paragraph about community gardens.';
 const localDraft = writeLikeMe(writingPrompt, decodedStyle);

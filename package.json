@@ -1,19 +1,23 @@
 {
   "name": "@ai-clyde/writelikeme",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Analyze writing locally, share style profiles in SVG metadata, and create deterministic style-guided drafts without an external AI service.",
   "main": "index.js",
   "files": [
     "cli.js",
     "index.js",
+    "handler.js",
+    "mcp.js",
     "README.md"
   ],
   "scripts": {
-    "test": "node test.js",
+    "test": "node test.js && node handler.test.js && node mcp.test.js && node verify.mjs",
     "generate": "node cli.js generate",
     "analyze": "node cli.js analyze",
     "write": "node cli.js write",
-    "docs:build": "node scripts/copy-browser.js && vitepress build docs"
+    "docs:build": "node scripts/copy-browser.js && vitepress build docs",
+    "brief": "node cli.js brief",
+    "mcp": "node cli.js mcp"
   },
   "bin": {
     "writelike-me": "cli.js"
@@ -28,16 +32,18 @@
     "content analysis",
     "offline writing",
     "style profile",
-    "text generation"
+    "text generation",
+    "mcp",
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "codex",
+    "agent"
   ],
   "author": "Clyde AI Project",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
-  },
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
   },
   "repository": {
     "type": "git",

@@ -2,6 +2,10 @@
 
 WriteLikeMe SVGs include a versioned JSON profile in their `<metadata>` element.
 This lets the style code be shared as a file and read back into the package.
+The current schema is v3, which carries the seven visible categories plus voice
+cues, habit signals, grammar mistake signals, sentence-structure signals,
+readability metrics, style classification, domain detection, and frequent words.
+v1 and v2 style codes are automatically upgraded to v3 when read.
 
 ## Read a profile from an SVG
 
@@ -14,6 +18,30 @@ const profile = WriteLikeMe.readStyleCode(svg);
 `stats`. For SVGs created before profile metadata was added, it estimates the
 seven category scores from the visible marks; other signal values are not
 recoverable.
+
+## Get a style brief for an AI model
+
+```javascript
+const brief = WriteLikeMe.describeStyle(profile); // or describeStyle(svgString)
+```
+
+`describeStyle` returns about seven short lines (register, sentences, voice,
+habits, punctuation, reading level, signature words), roughly 100 tokens. Paste
+it into a prompt so a language model writes in that voice; this works far better
+than the template writer below. The CLI equivalent is
+`writelike-me brief --style-code me.svg`, and the MCP tool is `describe_style`
+(see [AI harnesses](/api/harness-commands)).
+
+Example output:
+
+```text
+Register: casual and conversational; warm, positive tone.
+Sentences: short, with varied lengths; simple structure and everyday words.
+Voice: speak in first person (I/we); use contractions.
+Habits: ask the reader questions; use exclamation marks.
+Punctuation: balanced commas and full stops.
+Signature words: honestly, ship, team.
+```
 
 ## Write locally from a prompt
 

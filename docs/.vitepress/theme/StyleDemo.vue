@@ -5,9 +5,28 @@ const sampleText = 'Furthermore, our team developed a thoughtful approach to the
 const text = ref(sampleText)
 const message = ref('')
 const writeLikeMe = ref(null)
-const profile = computed(() => writeLikeMe.value?.analyzeText(text.value) || null)
+const imported = ref(null)
+const importedName = ref('')
+const prompt = ref('Write a short update about the project launch.')
+const draft = ref('')
+const fileInput = ref(null)
+
+const profile = computed(() => {
+  if (!writeLikeMe.value) return null
+  return imported.value || writeLikeMe.value.createStyleProfile(writeLikeMe.value.analyzeText(text.value))
+})
 const svg = computed(() => profile.value ? writeLikeMe.value.generateStyleSVG(profile.value) : '')
-const code = computed(() => `const WriteLikeMe = require('@ai-clyde/writelikeme');\n\nconst profile = ${JSON.stringify(profile.value, null, 2)};\nconst svg = WriteLikeMe.generateStyleSVG(profile);\n`)
+const brief = computed(() => profile.value ? writeLikeMe.value.describeStyle(profile.value) : '')
+const agentPrompt = computed(() => `Write in my personal style. Follow this style brief (from WriteLikeMe):\n\n${brief.value}\n\nKeep the meaning of my request; match the voice, not the topic.`)
+const code = `// npm install @ai-clyde/writelikeme
+const fs = require('fs');
+const WriteLikeMe = require('@ai-clyde/writelikeme');
+
+const sample = fs.readFileSync('my-writing.txt', 'utf8');
+const analysis = WriteLikeMe.analyzeText(sample);
+fs.writeFileSync('writelikeme-code.svg', WriteLikeMe.generateStyleSVG(analysis));
+console.log(WriteLikeMe.describeStyle(analysis));
+`
 const categories = [
   ['formality', 'Formality'],
   ['complexity', 'Complexity'],
@@ -22,9 +41,13 @@ onMounted(async () => {
   try {
     writeLikeMe.value = await loadAnalyzer()
   } catch (error) {
-    message.value = `The analyzer failed to load: ${error instanceof Error ? error.message : String(error)}`
+    message.value = `The analyzer failed to load: ${errorText(error)}`
   }
 })
+
+function errorText(error) {
+  return error instanceof Error ? error.message : String(error)
+}
 
 function loadAnalyzer() {
   if (window.WriteLikeMe) {
@@ -46,12 +69,25 @@ function loadAnalyzer() {
   })
 }
 
-async function copyCode() {
+async function copy(value, label) {
   try {
-    await navigator.clipboard.writeText(code.value)
-    message.value = 'JavaScript copied.'
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value)
+    } else {
+      const area = document.createElement('textarea')
+      area.value = value
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.append(area)
+      area.select()
+      const ok = document.execCommand('copy')
+      area.remove()
+      if (!ok) throw new Error('Clipboard is unavailable in this browser.')
+    }
+    message.value = `${label} copied.`
   } catch (error) {
-    message.value = `Could not copy code: ${error instanceof Error ? error.message : String(error)}`
+    message.value = `Could not copy ${label.toLowerCase()}: ${errorText(error)}`
   }
 }
 
@@ -60,10 +96,41 @@ function downloadSvg() {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = 'writelikeme-code.svg'
+  link.download = importedName.value || 'writelikeme-code.svg'
+  document.body.append(link)
   link.click()
+  link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   message.value = 'SVG downloaded.'
+}
+
+async function importSvg(event) {
+  const file = event.target.files && event.target.files[0]
+  event.target.value = ''
+  if (!file) return
+  try {
+    imported.value = writeLikeMe.value.readStyleCode(await file.text())
+    importedName.value = file.name
+    draft.value = ''
+    message.value = `Loaded style code from ${file.name}.`
+  } catch (error) {
+    message.value = `That file is not a readable WriteLikeMe style code: ${errorText(error)}`
+  }
+}
+
+function clearImport() {
+  imported.value = null
+  importedName.value = ''
+  draft.value = ''
+  message.value = 'Back to analyzing the sample text.'
+}
+
+function writeDraft() {
+  if (!prompt.value.trim()) {
+    message.value = 'Enter a prompt for the local draft.'
+    return
+  }
+  draft.value = writeLikeMe.value.writeLikeMe(prompt.value, profile.value)
 }
 </script>
 
@@ -71,50 +138,85 @@ function downloadSvg() {
   <section class="style-demo" aria-labelledby="demo-title">
     <div class="demo-intro">
       <h2 id="demo-title">Try it with your own text</h2>
-      <p>Text stays in your browser. See the estimated profile, then copy the JavaScript or download your QR-inspired style code.</p>
+      <p>Text stays in your browser. Paste writing (or load a shared <code>.svg</code> style code), then download the SVG or copy the style brief into your AI tool.</p>
     </div>
 
     <template v-if="writeLikeMe && profile">
-      <label class="demo-label" for="sample-text">Sample text</label>
-      <textarea id="sample-text" v-model="text" rows="6" spellcheck="true"></textarea>
+      <div v-if="imported" class="import-banner">
+        <span>Using the profile from <strong>{{ importedName }}</strong>.</span>
+        <button type="button" @click="clearImport">Analyze text instead</button>
+      </div>
+      <template v-else>
+        <label class="demo-label" for="sample-text">Sample text</label>
+        <textarea id="sample-text" v-model="text" rows="6" spellcheck="true"></textarea>
+      </template>
+      <div class="demo-actions">
+        <button type="button" @click="fileInput.click()">Load an SVG style code…</button>
+        <input ref="fileInput" type="file" accept=".svg,image/svg+xml" hidden @change="importSvg">
+      </div>
 
       <div class="demo-layout">
       <div class="score-panel">
         <h3>Style profile</h3>
-        <p class="count-summary">{{ profile.wordCount }} words · {{ profile.charCount }} characters</p>
-        <p class="count-summary punctuation-summary">{{ profile.commaCount }} commas · {{ profile.periodCount }} periods</p>
+        <template v-if="!imported">
+          <p class="count-summary">{{ profile.stats.wordCount }} words · {{ profile.stats.charCount }} characters</p>
+          <p class="count-summary punctuation-summary">{{ profile.stats.commaCount }} commas · {{ profile.stats.periodCount }} periods</p>
+        </template>
         <ul class="score-list">
           <li v-for="[key, label] in categories" :key="key">
             <div class="score-heading">
               <span>{{ label }}</span>
-              <strong>{{ Math.round(profile[key] * 100) }}%</strong>
+              <strong>{{ Math.round(profile.categories[key] * 100) }}%</strong>
             </div>
             <div class="score-track" aria-hidden="true">
-              <span :style="{ width: `${profile[key] * 100}%` }"></span>
+              <span :style="{ width: `${profile.categories[key] * 100}%` }"></span>
             </div>
           </li>
         </ul>
-        <p class="confidence">Signal strength: {{ Math.round(profile.confidence * 100) }}% (based on text length)</p>
+        <p v-if="!imported" class="confidence">Signal strength: {{ Math.round(profile.stats.confidence * 100) }}% (based on text length)</p>
       </div>
 
       <div class="preview-panel">
         <h3>WriteLikeMe Code</h3>
-        <div class="svg-preview" role="img" aria-label="QR-inspired circular code generated from the writing style profile" v-html="svg"></div>
+        <div class="svg-preview" role="img" aria-label="QR-inspired code generated from the writing style profile" v-html="svg"></div>
         <div class="demo-actions">
           <button type="button" class="demo-primary" @click="downloadSvg">Download SVG</button>
-          <button type="button" @click="copyCode">Copy JavaScript</button>
+          <button type="button" @click="copy(svg, 'SVG markup')">Copy SVG</button>
         </div>
       </div>
       </div>
 
+      <div class="brief-panel">
+        <h3>Style brief for AI tools</h3>
+        <p class="hint">About 100 tokens. Paste it into Claude Code, Cursor, Codex, Qwen Code or any chat so the model writes in this voice.</p>
+        <pre class="brief">{{ brief }}</pre>
+        <div class="demo-actions">
+          <button type="button" class="demo-primary" @click="copy(agentPrompt, 'Agent prompt')">Copy agent prompt</button>
+          <button type="button" @click="copy(brief, 'Style brief')">Copy brief only</button>
+        </div>
+      </div>
+
+      <div class="brief-panel">
+        <h3>Local draft (no AI)</h3>
+        <label class="demo-label" for="draft-prompt">Prompt</label>
+        <input id="draft-prompt" v-model="prompt" class="prompt-input" type="text" @keydown.enter="writeDraft">
+        <div class="demo-actions">
+          <button type="button" @click="writeDraft">Write draft</button>
+        </div>
+        <p v-if="draft" class="draft">{{ draft }}</p>
+      </div>
+
       <details class="generated-code">
-      <summary>View generated JavaScript</summary>
+      <summary>Do the same in Node.js</summary>
       <pre><code>{{ code }}</code></pre>
+      <div class="demo-actions code-actions">
+        <button type="button" @click="copy(code, 'JavaScript')">Copy JavaScript</button>
+      </div>
       </details>
     </template>
     <p v-else-if="!message" class="demo-loading">Preparing the browser analyzer…</p>
     <p class="demo-message" role="status" aria-live="polite">{{ message }}</p>
-    <p class="demo-disclaimer">These are lightweight dictionary and text-shape heuristics, not an AI assessment. Results can be inaccurate, especially for short text or languages other than English.</p>
+    <p class="demo-disclaimer">These are lightweight dictionary and text-shape heuristics, not an AI assessment. Results can be inaccurate, especially for short text or languages other than English. The SVG stores up to five frequent words from your sample; check it before sharing.</p>
   </section>
 </template>
 
@@ -164,6 +266,7 @@ textarea {
 }
 
 textarea:focus-visible,
+.prompt-input:focus-visible,
 button:focus-visible,
 summary:focus-visible {
   outline: 2px solid #73e0bd;
@@ -311,5 +414,66 @@ button.demo-primary {
   .demo-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.brief-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #28374c;
+  border-radius: 10px;
+  background: #101827;
+}
+
+.brief-panel h3 {
+  margin: 0 0 6px;
+}
+
+.hint {
+  margin: 0 0 10px;
+  color: #9fb0c5;
+  font-size: 0.9rem;
+}
+
+.brief,
+.draft {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #0b1220;
+  color: #d9e5f2;
+  white-space: pre-wrap;
+  font: 0.88rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.draft {
+  margin-top: 12px;
+  font-family: inherit;
+}
+
+.prompt-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #28374c;
+  border-radius: 8px;
+  background: #0b1220;
+  color: #edf2f7;
+  font: inherit;
+}
+
+.import-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid #73e0bd;
+  border-radius: 8px;
+  color: #d9e5f2;
+}
+
+.code-actions {
+  padding: 0 14px 14px;
 }
 </style>

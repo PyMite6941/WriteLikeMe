@@ -19,6 +19,8 @@ export default {
     siteTitle: 'WriteLikeMe',
     nav: [
       { text: 'Quick start', link: '/#quick-start' },
+      { text: 'Install', link: '/guide/installation' },
+      { text: 'AI harnesses', link: '/api/harness-commands' },
       { text: 'API', link: '/api/analyze-text' },
       { text: 'Examples', link: '/examples/basic-usage' },
       { text: 'GitHub', link: 'https://github.com/PyMite6941/WriteLikeMe' }
@@ -32,7 +34,8 @@ export default {
         {
           text: 'Getting Started',
           items: [
-            { text: 'Installation', link: '/guide/installation' }
+            { text: 'Installation', link: '/guide/installation' },
+            { text: 'AI harnesses', link: '/api/harness-commands' }
           ]
         }
       ],
@@ -41,6 +44,8 @@ export default {
         items: [
           { text: 'analyzeText', link: '/api/analyze-text' },
           { text: 'generateStyleSVG', link: '/api/generate-style-svg' },
+          { text: 'Handler', link: '/api/handler' },
+          { text: 'AI harnesses (MCP)', link: '/api/harness-commands' },
           { text: 'Style code and local writing', link: '/api/style-code' }
         ]
       }],

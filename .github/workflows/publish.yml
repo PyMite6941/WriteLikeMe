@@ -1,4 +1,4 @@
-name: Publish @ai-clyde/writelike-me to npm
+name: Publish @ai-clyde/writelikeme to npm
 
 on:
   push:
@@ -32,5 +32,18 @@ jobs:
       - name: Run package tests
         run: npm test
 
+      - name: Check whether this version is already published
+        id: check
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --provenance --access public
+        env:
+          # Used when npm trusted publishing (OIDC) isn't configured for this repo.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
