@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish:
@@ -22,9 +21,6 @@ jobs:
           node-version: '22'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Update npm for trusted publishing
-        run: npm install --global npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -43,7 +39,9 @@ jobs:
 
       - name: Publish to npm
         if: steps.check.outputs.published == 'false'
-        run: npm publish --provenance --access public
+        # Token auth. To switch to npm trusted publishing instead, add this repo and
+        # workflow (publish.yml) as a trusted publisher on npmjs.com, restore
+        # `id-token: write`, and use `npm publish --provenance --access public`.
+        run: npm publish --access public
         env:
-          # Used when npm trusted publishing (OIDC) isn't configured for this repo.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
