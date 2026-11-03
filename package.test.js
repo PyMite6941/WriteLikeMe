@@ -7,7 +7,10 @@ const { execSync } = require('child_process');
 const pkg = require('./package.json');
 
 const packed = JSON.parse(execSync('npm pack --dry-run --json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
-const files = new Set(packed[0].files.map((file) => file.path.replace(/\\/g, '/')));
+// npm <= 11 prints an array of packages; newer npm may print an object keyed by package name.
+const pack = Array.isArray(packed) ? packed[0] : packed[pkg.name] || Object.values(packed)[0];
+assert.ok(pack && Array.isArray(pack.files), 'unexpected `npm pack --json` output: ' + JSON.stringify(packed).slice(0, 200));
+const files = new Set(pack.files.map((file) => file.path.replace(/\\/g, '/')));
 
 const entries = [pkg.main].concat(Object.values(pkg.bin || {})).map((file) => file.replace(/^\.\//, ''));
 const seen = new Set();
