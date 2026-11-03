@@ -4,7 +4,9 @@ WriteLikeMe SVGs include a versioned JSON profile in their `<metadata>` element.
 This lets the style code be shared as a file and read back into the package.
 The current schema is v3, which carries the seven visible categories plus voice
 cues, habit signals, grammar mistake signals, sentence-structure signals,
-readability metrics, style classification, domain detection, and frequent words.
+readability metrics, style classification, domain detection, frequent words,
+and an optional named `context` string (email / blog / docs ...) stored in the
+SVG metadata.
 v1 and v2 style codes are automatically upgraded to v3 when read.
 
 ## Read a profile from an SVG
@@ -71,3 +73,13 @@ original writing sample. Frequent words can still reveal personal information,
 so inspect the profile before sharing it. AI providers do not automatically
 read SVG metadata; an application that uses an external model must call
 `readStyleCode` and pass the resulting JSON as explicit context.
+
+### `checkDraft(profile, draftText, options)`
+
+Scores a draft against a style profile and returns `{ score, pass, issues }`:
+
+- `score` (0-1): heuristic similarity between the draft and the profile, computed with the same comparison math as `compareTextStyle`.
+- `pass`: `true` when `score >= options.min` (default 0.8).
+- `issues`: at most five `{ signal, yours, draft, fix }` entries, largest gaps first, only gaps of 0.15 or more. Each `fix` is one short actionable sentence.
+
+It covers sentence length, formality, complexity, contraction rate, first and second person, punctuation, question/exclamation rate, tone and more. The `profile` argument accepts a profile object or a WriteLikeMe SVG string. The CLI equivalent is `writelike-me check`; the MCP tool is `check_draft`.

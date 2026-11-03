@@ -9,31 +9,35 @@ const { version } = require('./package.json');
 const usage = `WriteLikeMe ${version} - local writing-style analysis and SVG style codes
 
 Usage:
-  writelike-me analyze  [text] [-f file] [--brief]
-  writelike-me generate [text] [-f file] [-o out.svg] [--width N] [--height N]
-  writelike-me brief    --style-code <file.svg>        (or [text] / -f file)
+  writelike-me analyze  [text] [-f file]... [--brief]
+  writelike-me generate [text] [-f file]... [-o out.svg] [--width N] [--height N] [--no-words]
+  writelike-me brief    --style-code <file.svg>        (or [text] / -f file...)
   writelike-me inspect  <file.svg> [--brief]
   writelike-me write    --style-code <file.svg> <prompt>
   writelike-me compare  <reference> <candidate>  |  --reference-file a --candidate-file b
+  writelike-me check  --style-code <file.svg> [draft text | -f file | -] [--min 0.8] [--json]
   writelike-me mcp                                     (MCP server over stdio)
 
-Text input: positional words, -f/--file <path>, or "-" to read stdin.
+Text input: positional words, -f/--file <path> (repeatable; a directory reads its
+.md, .txt and .markdown files non-recursively, sorted), or "-" to read stdin.
 -o/--out writes the SVG to a file and prints one line instead of the markup.
---brief prints a compact summary instead of the full JSON (fewer tokens).`;
+--brief prints a compact summary instead of the full JSON (fewer tokens).
+--no-words leaves frequent words and signature phrases out of the generated SVG.`;
 
 const VALUE_FLAGS = {
   '-f': 'file', '--file': 'file',
   '-o': 'out', '--out': 'out',
   '-s': 'styleCode', '--style-code': 'styleCode',
   '--width': 'width', '--height': 'height',
-  '--reference-file': 'referenceFile', '--candidate-file': 'candidateFile'
+  '--reference-file': 'referenceFile', '--candidate-file': 'candidateFile',
+  '--min': 'min', '--context': 'context'
 };
-const BOOL_FLAGS = { '--brief': 'brief', '--json': 'json' };
+const BOOL_FLAGS = { '--brief': 'brief', '--json': 'json', '--no-words': 'noWords' };
 
 class UsageError extends Error {}
 
 function parseArgs(args) {
-  const opts = { positional: [] };
+  const opts = { positional: [], files: [] };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     const eq = arg.indexOf('=');
@@ -41,8 +45,12 @@ function parseArgs(args) {
     if (VALUE_FLAGS[name]) {
       const value = name !== arg ? arg.slice(eq + 1) : args[++i];
       if (!value) throw new UsageError(`Provide a value after ${name}.`);
-      if (opts[VALUE_FLAGS[name]] !== undefined) throw new UsageError(`Provide exactly one value for ${name}.`);
-      opts[VALUE_FLAGS[name]] = value;
+      if (name === '-f' || name === '--file') {
+        opts.files.push(value);
+      } else {
+        if (opts[VALUE_FLAGS[name]] !== undefined) throw new UsageError(`Provide exactly one value for ${name}.`);
+        opts[VALUE_FLAGS[name]] = value;
+      }
     } else if (BOOL_FLAGS[arg]) {
       opts[BOOL_FLAGS[arg]] = true;
     } else {
@@ -52,10 +60,44 @@ function parseArgs(args) {
   return opts;
 }
 
+function listTextFiles(dir) {
+  var names;
+  try {
+    names = fs.readdirSync(dir);
+  } catch (error) {
+    throw new UsageError(`Could not read directory ${dir}: ${error.message}`);
+  }
+  return names.filter(function(name) {
+    var ext = path.extname(name).toLowerCase();
+    return ext === '.md' || ext === '.txt' || ext === '.markdown';
+  }).sort().map(function(name) {
+    return path.join(dir, name);
+  });
+}
+
 function readInput(opts) {
-  if (opts.file) return fs.readFileSync(opts.file, 'utf8');
-  if (opts.positional.length === 1 && opts.positional[0] === '-') return fs.readFileSync(0, 'utf8');
-  return opts.positional.join(' ');
+  var parts = [];
+  opts.files.forEach(function(file) {
+    var stat;
+    try {
+      stat = fs.statSync(file);
+    } catch (error) {
+      throw new UsageError(`Could not read ${file}: ${error.code === 'ENOENT' ? 'file not found' : error.message}`);
+    }
+    if (stat && stat.isDirectory()) {
+      listTextFiles(file).forEach(function(textFile) {
+        parts.push(fs.readFileSync(textFile, 'utf8'));
+      });
+    } else {
+      parts.push(fs.readFileSync(file, 'utf8'));
+    }
+  });
+  if (opts.positional.length === 1 && opts.positional[0] === '-') {
+    parts.push(fs.readFileSync(0, 'utf8'));
+  } else if (opts.positional.length > 0) {
+    parts.push(opts.positional.join(' '));
+  }
+  return parts.join('\n\n');
 }
 
 function readSvg(file) {
@@ -92,15 +134,38 @@ function run(command, args) {
     }
     case 'generate': {
       const text = readInput(opts).trim();
+      var input = text ? WriteLikeMe.analyzeText(text) : undefined;
+      if (opts.context) {
+        input = input || {};
+        input.context = opts.context;
+      }
       const svg = WriteLikeMe.generateStyleSVG(
-        text ? WriteLikeMe.analyzeText(text) : undefined,
+        input,
         size(opts.width, '--width'),
-        size(opts.height, '--height')
+        size(opts.height, '--height'),
+        opts.noWords ? { includeWords: false } : undefined
       );
-      if (!opts.out) return print(svg);
-      fs.mkdirSync(path.dirname(path.resolve(opts.out)), { recursive: true });
-      fs.writeFileSync(opts.out, svg + '\n');
-      return print(`Wrote ${opts.out} (${svg.length} bytes)`);
+      var out = opts.out;
+      if (!out && opts.context) out = 'style/' + opts.context + '.svg';
+      if (!out) return print(svg);
+      fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
+      fs.writeFileSync(out, svg + '\n');
+      return print(`Wrote ${out} (${svg.length} bytes)`);
+    }
+    case 'check': {
+      const draft = readInput(opts).trim();
+      if (!draft) throw new UsageError('Provide draft text, -f draft.md, or - for stdin.');
+      if (!opts.styleCode) throw new UsageError('Provide --style-code <file.svg>.');
+      var min = opts.min === undefined ? undefined : Number(opts.min);
+      if (opts.min !== undefined && !Number.isFinite(min)) throw new UsageError('--min must be a number between 0 and 1.');
+      const result = WriteLikeMe.checkDraft(readSvg(opts.styleCode), draft, { min: min });
+      if (opts.json) return print(result);
+      var lines = ['Score ' + result.score + ' (' + (result.pass ? 'pass' : 'fail') + ')'];
+      result.issues.forEach(function(issue) {
+        lines.push('- ' + issue.fix);
+      });
+      process.exitCode = result.pass ? 0 : 1;
+      return print(lines.join('\n'));
     }
     case 'brief': {
       let profile;
@@ -119,7 +184,9 @@ function run(command, args) {
       return print(opts.brief ? briefSummary(profile) : profile);
     }
     case 'write': {
-      const prompt = (opts.file ? fs.readFileSync(opts.file, 'utf8') : opts.positional.join(' ')).trim();
+      const prompt = (opts.files && opts.files.length
+        ? fs.readFileSync(opts.files[0], 'utf8')
+        : opts.positional.join(' ')).trim();
       if (!opts.styleCode || !prompt) throw new UsageError('Provide a prompt and an SVG file with --style-code.');
       return print(WriteLikeMe.writeLikeMe(prompt, readSvg(opts.styleCode)));
     }

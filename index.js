@@ -91,6 +91,16 @@ var COMMON_WORDS = new Set([
   'through', 'under', 'very', 'were', 'what', 'when', 'where', 'which',
   'while', 'with', 'would', 'your'
 ]);
+
+// Generic verbs and fillers that crowd out real topic/voice words in
+// frequentWords. Kept separate from COMMON_WORDS so the two lists stay
+// meaningful on their own, but both exclude words from the result.
+var EXTRA_STOP_WORDS = new Set([
+  'think', 'know', 'get', 'got', 'make', 'thing', 'things', 'really', 'just',
+  'like', 'also', 'very', 'much', 'many', 'one', 'would', 'could', 'should',
+  'can', 'will', 'said', 'say', 'way', 'well', 'even', 'still', 'lot',
+  'actually', 'basically'
+]);
 var STYLE_SIGNAL_NAMES = [
   'formality',
   'complexity',
@@ -341,8 +351,9 @@ function profileScore(source, key, fallback) {
     : fallback;
 }
 
-function createStyleProfile(input) {
+function createStyleProfile(input, options) {
   var source = input && typeof input === 'object' ? input : {};
+  var includeWords = !(options && options.includeWords === false);
   var categories = source.categories && typeof source.categories === 'object'
     ? source.categories
     : source;
@@ -428,6 +439,22 @@ function createStyleProfile(input) {
       });
   }
 
+  if (Array.isArray(source.signaturePhrases)) {
+    profile.signaturePhrases = source.signaturePhrases
+      .filter(function(item) {
+        return item && typeof item.phrase === 'string';
+      })
+      .slice(0, 5)
+      .map(function(item) {
+        return {
+          phrase: String(item.phrase).slice(0, 80),
+          count: typeof item.count === 'number' && Number.isFinite(item.count)
+            ? item.count
+            : 1
+        };
+      });
+  }
+
   var stats = source.stats && typeof source.stats === 'object' ? source.stats : source;
   [
     'wordCount',
@@ -473,6 +500,17 @@ function createStyleProfile(input) {
   // Carry over domain from top-level source when present (analyzeText output).
   if (typeof source.domain === 'string') {
     profile.custom.domain = source.domain;
+  }
+
+  // Carry over the optional named context (email / blog / docs ...). It is
+  // stored in SVG metadata and round-trips; old profiles simply have none.
+  if (typeof source.context === 'string') {
+    profile.context = source.context;
+  }
+
+  if (!includeWords) {
+    profile.frequentWords = [];
+    profile.signaturePhrases = [];
   }
 
   return profile;
@@ -521,7 +559,7 @@ function normalizeStyleProfile(styleCode) {
 }
 
 // Generate SVG circles for writing style category scores.
-exports.generateStyleSVG = function(cats, width, height) {
+exports.generateStyleSVG = function(cats, width, height, options) {
   var input = cats && typeof cats === 'object' ? cats : {};
   var opts = input.categories && typeof input.categories === 'object'
     ? input.categories
@@ -539,7 +577,7 @@ exports.generateStyleSVG = function(cats, width, height) {
   var categoryLabels = ['F', 'C', 'L', 'V', 'T', 'R', 'P'];
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgWidth + '" height="' + svgHeight + '" viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '">';
   svg += '<metadata id="writelikeme-profile" data-schema-version="' + SCHEMA_VERSION + '">' +
-    escapeXml(JSON.stringify(createStyleProfile(input))) + '</metadata>';
+    escapeXml(JSON.stringify(createStyleProfile(input, options))) + '</metadata>';
   svg += '<title>WriteLikeMe Code - decorative writing style profile</title>';
   svg += '<desc>A square, QR-inspired pattern encodes seven writing signals. The punctuation band uses comma shapes and period dots to show their balance. This is not a scannable QR code.</desc>';
   svg += '<defs><radialGradient id="code-bg"><stop offset="0%" stop-color="#14263a"/><stop offset="100%" stop-color="#080e19"/></radialGradient></defs>';
@@ -643,7 +681,7 @@ exports.analyzeText = function(text) {
   var hedgingCount = countSetMatches(words, HEDGING_WORDS);
 
   // Dialogue / quote heuristic: tokens wrapped in quotation marks.
-  var quoteMatches = trimmedText.match(/["“”‘’][^"“”‘’]{1,60}["“”‘’]/g) || [];
+  var quoteMatches = trimmedText.match(/["'“”‘’][^"'“”‘’]{1,60}["'“”‘’]/g) || [];
   var dialogueRate = quoteMatches.length / Math.max(sentenceWordCounts.length, 1);
 
   // All-caps tokens (length >= 2) as emphasis/shouting indicator.
@@ -676,7 +714,8 @@ exports.analyzeText = function(text) {
     : commaCount / (commaCount + periodCount);
   var wordFrequencies = new Map();
   words.forEach(function(word, index) {
-    if (word.length < 4 || COMMON_WORDS.has(word)) {
+    if (word.length < 4 || COMMON_WORDS.has(word) || EXTRA_STOP_WORDS.has(word)
+        || word.indexOf("'") !== -1 || word.indexOf('’') !== -1) {
       return;
     }
     var frequency = wordFrequencies.get(word);
@@ -690,6 +729,25 @@ exports.analyzeText = function(text) {
     return right[1].count - left[1].count || left[1].firstIndex - right[1].firstIndex;
   }).slice(0, 5).map(function(entry) {
     return entry[0];
+  });
+
+  // Signature phrases: up to 5 most common two-word sentence openers (lowercased)
+  // that appear at least twice. These capture how a writer typically begins
+  // sentences and survive the SVG metadata round trip.
+  var sentenceOpeners = new Map();
+  sentences.forEach(function(sentence) {
+    var sentenceWords = tokenize(sentence);
+    if (sentenceWords.length < 2) return;
+    var opener = sentenceWords.slice(0, 2).join(' ');
+    var count = sentenceOpeners.get(opener);
+    sentenceOpeners.set(opener, count ? count + 1 : 1);
+  });
+  var signaturePhrases = Array.from(sentenceOpeners.entries()).sort(function(left, right) {
+    return right[1] - left[1];
+  }).filter(function(entry) {
+    return entry[1] >= 2;
+  }).slice(0, 5).map(function(entry) {
+    return { phrase: entry[0], count: entry[1] };
   });
 
   var formality = (formalCount + 1) / (formalCount + casualCount + 2);
@@ -871,6 +929,7 @@ exports.analyzeText = function(text) {
     punctuation_rhythm: roundScore(punctuationRhythm),
     quote_style: roundScore(quoteStyle),
     frequentWords: frequentWords,
+    signaturePhrases: signaturePhrases,
     // Structured habit breakdowns (carried into SVG metadata as-is).
     punctuationBreakdown: {
       comma: commaCount,
@@ -910,35 +969,47 @@ exports.analyzeText = function(text) {
   };
 };
 
+// Analyze several writing samples at once: non-empty samples are joined with
+// blank lines and analyzed as one text, plus a sampleCount of how many
+// samples actually contributed.
+exports.analyzeSamples = function(texts) {
+  var samples = [];
+  if (Array.isArray(texts)) {
+    texts.forEach(function(text) {
+      if (typeof text === 'string' && text.trim().length > 0) {
+        samples.push(text);
+      }
+    });
+  }
+  var result = exports.analyzeText(samples.join('\n\n'));
+  result.sampleCount = samples.length;
+  return result;
+};
+
+// Compare two flat score maps (the shape analyzeText returns) over a list of
+// signal names. Returns per-signal differences and the running similarity total
+// so compareTextStyle and checkDraft share the exact same comparison math.
+function compareStyleScores(reference, candidate, signalNames) {
+  var differences = {};
+  var similarityTotal = 0;
+  signalNames.forEach(function(signal) {
+    var difference = roundScore(Math.abs(reference[signal] - candidate[signal]));
+    differences[signal] = difference;
+    similarityTotal += 1 - difference;
+  });
+  return { differences: differences, similarityTotal: similarityTotal };
+}
+
 exports.compareTextStyle = function(referenceText, candidateText) {
   var reference = exports.analyzeText(referenceText);
   var candidate = exports.analyzeText(candidateText);
-  var differences = {};
-  var similarityTotal = 0;
-
-  STYLE_SIGNAL_NAMES.forEach(function(signal) {
-    var difference = roundScore(Math.abs(reference[signal] - candidate[signal]));
-    differences[signal] = difference;
-    similarityTotal += 1 - difference;
-  });
-
-  HABIT_SIGNAL_NAMES.forEach(function(signal) {
-    var difference = roundScore(Math.abs(reference[signal] - candidate[signal]));
-    differences[signal] = difference;
-    similarityTotal += 1 - difference;
-  });
-
-  GRAMMAR_SIGNAL_NAMES.forEach(function(signal) {
-    var difference = roundScore(Math.abs(reference[signal] - candidate[signal]));
-    differences[signal] = difference;
-    similarityTotal += 1 - difference;
-  });
-
-  SENTENCE_STRUCTURE_NAMES.forEach(function(signal) {
-    var difference = roundScore(Math.abs(reference[signal] - candidate[signal]));
-    differences[signal] = difference;
-    similarityTotal += 1 - difference;
-  });
+  var signalNames = STYLE_SIGNAL_NAMES
+    .concat(HABIT_SIGNAL_NAMES)
+    .concat(GRAMMAR_SIGNAL_NAMES)
+    .concat(SENTENCE_STRUCTURE_NAMES);
+  var comparison = compareStyleScores(reference, candidate, signalNames);
+  var differences = comparison.differences;
+  var similarityTotal = comparison.similarityTotal;
 
   var referenceWords = new Set(reference.frequentWords.map(function(w) { return typeof w === 'string' ? w : w.word; }));
   var candidateWords = new Set(candidate.frequentWords.map(function(w) { return typeof w === 'string' ? w : w.word; }));
@@ -957,6 +1028,148 @@ exports.compareTextStyle = function(referenceText, candidateText) {
     differences: differences
   };
 };
+
+// Check a draft against a style profile: score (0-1), a pass flag, and up to
+// five largest style gaps with short actionable fixes.
+exports.checkDraft = function(styleCodeOrProfile, draftText, options) {
+  var opts = options && typeof options === 'object' ? options : {};
+  var min = typeof opts.min === 'number' && Number.isFinite(opts.min)
+    ? clamp(opts.min, 0, 1)
+    : 0.8;
+  var profile = normalizeStyleProfile(styleCodeOrProfile);
+  var draft = exports.analyzeText(typeof draftText === 'string' ? draftText : '');
+
+  // Flatten the stored profile into the same flat score map analyzeText returns
+  // so the existing comparison math applies to a profile versus a draft.
+  var flat = {};
+  CATEGORY_NAMES.forEach(function(category) {
+    flat[category] = typeof profile.categories[category] === 'number'
+      ? profile.categories[category]
+      : DEFAULT_STYLE_CATEGORIES[category];
+  });
+  STYLE_SIGNAL_NAMES.filter(function(signal) {
+    return CATEGORY_NAMES.indexOf(signal) === -1;
+  }).forEach(function(signal) {
+    flat[signal] = typeof profile.signals[signal] === 'number'
+      ? profile.signals[signal]
+      : 0;
+  });
+  HABIT_SIGNAL_NAMES.forEach(function(signal) {
+    flat[signal] = typeof profile.signals[signal] === 'number'
+      ? profile.signals[signal]
+      : 0;
+  });
+  GRAMMAR_SIGNAL_NAMES.forEach(function(signal) {
+    flat[signal] = typeof profile.signals[signal] === 'number'
+      ? profile.signals[signal]
+      : 0;
+  });
+  SENTENCE_STRUCTURE_NAMES.forEach(function(signal) {
+    flat[signal] = typeof profile.signals[signal] === 'number'
+      ? profile.signals[signal]
+      : 0;
+  });
+
+  var signalNames = STYLE_SIGNAL_NAMES
+    .concat(HABIT_SIGNAL_NAMES)
+    .concat(GRAMMAR_SIGNAL_NAMES)
+    .concat(SENTENCE_STRUCTURE_NAMES);
+  var comparison = compareStyleScores(flat, draft, signalNames);
+  var differences = comparison.differences;
+  var similarityTotal = comparison.similarityTotal;
+
+  // Frequent-word overlap, same as compareTextStyle.
+  var referenceWords = new Set((profile.frequentWords || []).map(function(w) {
+    return typeof w === 'string' ? w : w.word;
+  }));
+  var candidateWords = new Set(draft.frequentWords.map(function(w) {
+    return typeof w === 'string' ? w : w.word;
+  }));
+  var sharedWords = Array.from(referenceWords).filter(function(word) {
+    return candidateWords.has(word);
+  }).length;
+  var wordUnionSize = new Set(Array.from(referenceWords).concat(Array.from(candidateWords))).size;
+  var frequentWordsOverlap = wordUnionSize === 0 ? 0 : roundScore(sharedWords / wordUnionSize);
+  differences.frequentWordsOverlap = frequentWordsOverlap;
+  similarityTotal += frequentWordsOverlap;
+
+  var score = roundScore(similarityTotal / (signalNames.length + 1));
+
+  // Issues: largest gaps first, only gaps >= 0.15, at most 5.
+  var issues = [];
+  Object.keys(differences).forEach(function(signal) {
+    var gap = differences[signal];
+    if (typeof gap === 'number' && gap >= 0.15 && signal !== 'frequentWordsOverlap') {
+      var yours = flat[signal];
+      var draftValue = draft[signal];
+      issues.push({
+        signal: signal,
+        yours: roundScore(yours),
+        draft: roundScore(draftValue),
+        gap: gap,
+        fix: draftFix(signal, yours, draftValue)
+      });
+    }
+  });
+  issues.sort(function(left, right) {
+    return right.gap - left.gap;
+  });
+  issues = issues.slice(0, 5);
+  issues.forEach(function(issue) {
+    delete issue.gap;
+  });
+
+  return {
+    score: score,
+    pass: score >= min,
+    issues: issues
+  };
+};
+
+// Short, actionable fix sentence for one signal gap, nudging the draft toward
+// the user's own style (yours vs draft).
+function draftFix(signal, yours, draft) {
+  var more = draft > yours;
+  switch (signal) {
+    case 'sentence_length':
+      return more ? 'Use shorter sentences.' : 'Use longer sentences.';
+    case 'formality':
+      return more ? 'Use simpler, less formal language.' : 'Use more formal language.';
+    case 'complexity':
+      return more ? 'Use simpler words and structure.' : 'Use more complex words and structure.';
+    case 'vocabulary':
+      return more ? 'Use simpler, more repeated vocabulary.' : 'Use a more varied vocabulary.';
+    case 'tone':
+      return more ? 'Use a warmer, more positive tone.' : 'Use a more restrained or critical tone.';
+    case 'creativity':
+      return more ? 'Be more direct and literal.' : 'Use more vivid, figurative wording.';
+    case 'punctuation':
+      return more ? 'Use fewer commas.' : 'Use more commas.';
+    case 'contraction_rate':
+      return more ? 'Avoid contractions.' : 'Use contractions like it\'s and don\'t.';
+    case 'first_person':
+      return more ? 'Use less first person (I/we).' : 'Write in first person.';
+    case 'second_person':
+      return more ? 'Use less "you".' : 'Address the reader as "you".';
+    case 'question_rate':
+      return more ? 'Ask fewer questions.' : 'Ask the reader a question now and then.';
+    case 'exclamation_rate':
+      return more ? 'Use fewer exclamation marks.' : 'Use exclamation marks.';
+    case 'transition_rate':
+      return more ? 'Use fewer transition words.' : 'Signpost with transitions like however and furthermore.';
+    case 'hedging_rate':
+      return more ? 'State claims more directly.' : 'Hedge claims with words like might and probably.';
+    case 'simple_sentence_rate':
+      return more ? 'Combine some short sentences.' : 'Use more short, simple sentences.';
+    case 'compound_sentence_rate':
+      return more ? 'Split up sentences joined with and/but.' : 'Join related ideas with and/but.';
+    case 'complex_sentence_rate':
+      return more ? 'Use fewer sentences with because/although clauses.' : 'Add the occasional because/although clause.';
+    default:
+      var label = signal.replace(/_rate$/, '').replace(/_/g, ' ');
+      return more ? 'Use less ' + label + '.' : 'Use more ' + label + '.';
+  }
+}
 
 exports.readStyleCode = function(svg) {
   if (typeof svg !== 'string' || !/<svg\b/i.test(svg)) {
@@ -1184,8 +1397,16 @@ exports.describeStyle = function(profileInput) {
       return entry.word;
     }).join(', ') + '.');
   }
+  if (profile.signaturePhrases && profile.signaturePhrases.length) {
+    lines.push('Typical openers: ' + profile.signaturePhrases.slice(0, 5).map(function(entry) {
+      return entry.phrase;
+    }).join(', ') + '.');
+  }
+  if (profile.context) {
+    lines.unshift('Context: ' + profile.context + '.');
+  }
   return lines.join('\n');
-};
+ };
 
 exports.DEFAULT_STYLE_CATEGORIES = DEFAULT_STYLE_CATEGORIES;
 exports.HABIT_SIGNAL_NAMES = HABIT_SIGNAL_NAMES;

@@ -8,6 +8,7 @@ const WriteLikeMe = require('./index.js');
 const { generateStyleSVG, analyzeText } = WriteLikeMe;
 const { compareTextStyle } = WriteLikeMe;
 const { readStyleCode, writeLikeMe } = WriteLikeMe;
+const { checkDraft } = WriteLikeMe;
 assert.equal(typeof compareTextStyle, 'function');
 assert.equal(typeof readStyleCode, 'function');
 assert.equal(typeof writeLikeMe, 'function');
@@ -283,3 +284,132 @@ try {
   fs.unlinkSync(styleCodePath);
 }
 console.log('SVG profile round-trip, legacy import, and offline writing verified.');
+
+// Test 10: analyzeSamples joins multiple samples and counts them.
+console.log('=== Test 10: Multiple Samples ===');
+const joined = WriteLikeMe.analyzeSamples(['First sample about apples.', '', 'Second sample about apples and oranges.']);
+assert.equal(joined.sampleCount, 2, 'sampleCount counts non-empty samples');
+assert.ok(joined.frequentWords.indexOf('apples') !== -1, 'joined analysis keeps topic words');
+assert.deepEqual(WriteLikeMe.analyzeSamples([]).frequentWords, []);
+assert.equal(WriteLikeMe.analyzeSamples([]).sampleCount, 0);
+assert.equal(WriteLikeMe.analyzeSamples(['', '   ']).sampleCount, 0);
+assert.equal(WriteLikeMe.analyzeSamples(['only one']).sampleCount, 1);
+assert.equal(WriteLikeMe.analyzeSamples(null).sampleCount, 0);
+console.log('analyzeSamples joins non-empty samples with blank lines and reports sampleCount.');
+console.log('');
+
+// Test 11: frequentWords excludes contractions and the extended stopword list.
+console.log('=== Test 11: Better Signature Words ===');
+const filler = WriteLikeMe.analyzeText("Honestly, I think it's working. I really like it, and I think you should get it. Basically it's just great.");
+const fillerWords = filler.frequentWords;
+['think', 'really', 'like', 'should', 'get', 'basically', 'just', "it's", "i'm"].forEach(function(blocked) {
+  assert.equal(fillerWords.indexOf(blocked), -1, blocked + ' should be excluded from frequent words');
+});
+assert.ok(fillerWords.indexOf('working') !== -1, 'real topic words are kept');
+assert.ok(fillerWords.indexOf('great') !== -1, 'real topic words are kept');
+assert.ok(fillerWords.length <= 5, 'no more than five frequent words');
+const contracted = WriteLikeMe.analyzeText('it’s fine, I’m sure it\'s fine.').frequentWords;
+assert.equal(contracted.indexOf("it’s"), -1, 'curly-apostrophe contraction excluded');
+assert.equal(contracted.indexOf("it's"), -1, 'straight-apostrophe contraction excluded');
+assert.equal(contracted.indexOf("I’m"), -1, 'curly contracted pronoun excluded');
+assert.equal(contracted.indexOf("I'm"), -1, 'straight contracted pronoun excluded');
+console.log('frequentWords excludes contractions and extended filler words.');
+console.log('');
+
+// Test 12: signaturePhrases and the describeStyle openers line.
+console.log('=== Test 12: Signature Phrases ===');
+const openerText = 'In my view, this is fine. In my view, that is also fine. In my view, we agree. A one-off opener once.';
+const op = WriteLikeMe.analyzeText(openerText);
+assert.deepEqual(op.signaturePhrases, [{ phrase: 'in my', count: 3 }]);
+assert.ok(op.signaturePhrases.length <= 5);
+op.signaturePhrases.forEach(function(entry) {
+  assert.ok(typeof entry.phrase === 'string' && typeof entry.count === 'number');
+  assert.ok(entry.count >= 2, 'openers must appear at least twice');
+});
+assert.deepEqual(WriteLikeMe.analyzeText('Hello world. Goodbye world.').signaturePhrases, [], 'one-off openers are not included');
+assert.equal(WriteLikeMe.analyzeText('Hi. Bye.').signaturePhrases.length, 0, 'single-word sentences cannot form openers');
+assert.ok(WriteLikeMe.describeStyle(op).indexOf('Typical openers: in my.') !== -1, 'describeStyle lists typical openers');
+assert.ok(WriteLikeMe.describeStyle(WriteLikeMe.analyzeText('Hello world. Goodbye world.')).indexOf('Typical openers') === -1, 'no openers line when absent');
+console.log('signaturePhrases are computed and described.');
+console.log('');
+
+// Test 13: includeWords privacy option empties words and phrases.
+console.log('=== Test 13: Privacy Option (includeWords) ===');
+const sample = 'apple apple banana. cherry cherry cherry. delta echo foxtrot.';
+const withWords = WriteLikeMe.createStyleProfile(WriteLikeMe.analyzeText(sample));
+assert.ok(withWords.frequentWords.length > 0);
+const withoutWords = WriteLikeMe.createStyleProfile(WriteLikeMe.analyzeText(sample), { includeWords: false });
+assert.equal(withoutWords.frequentWords.length, 0, 'profile frequentWords emptied');
+assert.equal(withoutWords.signaturePhrases.length, 0, 'profile signaturePhrases emptied');
+const withDefault = WriteLikeMe.createStyleProfile(WriteLikeMe.analyzeText(sample));
+assert.ok(withDefault.frequentWords.length > 0, 'words kept by default');
+const svgWithout = WriteLikeMe.generateStyleSVG(WriteLikeMe.analyzeText(sample), undefined, undefined, { includeWords: false });
+const decodedWithout = WriteLikeMe.readStyleCode(svgWithout);
+assert.equal(decodedWithout.frequentWords.length, 0, 'SVG metadata frequentWords emptied');
+assert.equal(decodedWithout.signaturePhrases.length, 0, 'SVG metadata signaturePhrases emptied');
+const svgWith = WriteLikeMe.generateStyleSVG(WriteLikeMe.analyzeText(sample));
+assert.ok(WriteLikeMe.readStyleCode(svgWith).frequentWords.length > 0, 'SVG metadata keeps words by default');
+console.log('includeWords:false empties frequent words and signature phrases in profiles and SVG metadata.');
+
+// Test 14: checkDraft scores a draft against a profile and reports issues.
+console.log('=== Test 14: Draft Checking ===');
+const userProfile = WriteLikeMe.createStyleProfile(WriteLikeMe.analyzeText('I think it is simple. You build it, you ship it. That is it. Here is what I learned.'));
+const matching = 'I think it is simple. You build it, you ship it. That is it.';
+const matchResult = checkDraft(userProfile, matching);
+assert.ok(matchResult.score >= 0 && matchResult.score <= 1, 'score within 0-1');
+assert.equal(matchResult.pass, matchResult.score >= 0.8, 'pass = score >= default min 0.8');
+assert.ok(Array.isArray(matchResult.issues), 'issues is an array');
+assert.ok(matchResult.issues.length <= 5, 'at most five issues');
+matchResult.issues.forEach(function(issue) {
+  ['signal', 'yours', 'draft', 'fix'].forEach(function(key) {
+    assert.ok(key in issue, 'issue has ' + key);
+  });
+  assert.equal(typeof issue.yours, 'number', 'yours is a number');
+  assert.equal(typeof issue.draft, 'number', 'draft is a number');
+  assert.ok(typeof issue.fix === 'string' && issue.fix.length > 0 && issue.fix.length < 120, 'fix is a short sentence: ' + issue.fix);
+});
+var gaps = matchResult.issues.map(function(issue) { return Math.abs(issue.yours - issue.draft); });
+for (var k = 1; k < gaps.length; k++) assert.ok(gaps[k - 1] >= gaps[k], 'issues sorted largest gap first');
+matchResult.issues.forEach(function(issue) { assert.ok(Math.abs(issue.yours - issue.draft) >= 0.14, 'reported gap >= 0.15'); });
+
+// min threshold controls pass/fail (CI behaviour).
+assert.ok(checkDraft(userProfile, matching, { min: 0.99 }).pass === false, 'high min fails');
+assert.ok(checkDraft(userProfile, matching, { min: 0 }).pass === true, 'low min passes');
+
+// A clearly different draft scores lower and yields issues.
+var veryDifferent = 'Furthermore, a comprehensive evaluation is necessary; the optimal recommendation should be implemented immediately!';
+var diffResult = checkDraft(userProfile, veryDifferent);
+assert.ok(diffResult.score < matchResult.score, 'different draft scores lower');
+assert.ok(diffResult.pass === false, 'very different draft fails default min');
+assert.ok(diffResult.issues.length > 0, 'very different draft has issues');
+
+// Accepts an SVG string as well as a profile object.
+var styleSvg = WriteLikeMe.generateStyleSVG(userProfile);
+var fromSvg = checkDraft(styleSvg, matching);
+assert.equal(fromSvg.score, matchResult.score, 'SVG string and profile give the same score');
+
+// Named context round-trips through SVG metadata and heads describeStyle.
+var ctxSvg = WriteLikeMe.generateStyleSVG(Object.assign(WriteLikeMe.analyzeText('I think we should ship this. You will like it.'), { context: 'blog' }));
+var decodedCtx = WriteLikeMe.readStyleCode(ctxSvg);
+assert.equal(decodedCtx.context, 'blog', 'context stored in SVG metadata');
+var brief = WriteLikeMe.describeStyle(decodedCtx);
+assert.equal(brief.indexOf('Context: blog.'), 0, 'Context: blog. is the first describeStyle line');
+assert.equal(WriteLikeMe.describeStyle(userProfile).indexOf('Context:') === -1, true, 'no Context line when absent');
+console.log('checkDraft score/pass/issues, min threshold, SVG input, and named context verified.');
+console.log('');
+
+// The brief is multi-line plain text (regression: lines were once joined with a literal backslash-n).
+(function() {
+  var W = require('./index.js');
+  var brief = W.describeStyle(W.analyzeText("I think it's simple. I think you'll like it. You build it and ship it."));
+  assert.ok(brief.split('\n').length >= 5, 'brief has one line per item');
+  assert.strictEqual(brief.indexOf('\\n'), -1, 'no literal backslash-n in the brief');
+  assert.match(brief, /^Typical openers: i think\.$/m);
+  var withContext = W.describeStyle(Object.assign(W.createStyleProfile(W.analyzeText('Hello there. This is me.')), { context: 'email' }));
+  assert.match(withContext, /^Context: email\.\nRegister:/);
+  var check = W.checkDraft(W.createStyleProfile(W.analyzeText("I think it's simple. You build it, you ship it. That's it.")),
+    'The committee has determined that implementation shall commence, subject to the approval of all relevant stakeholders.');
+  assert.ok(check.issues.length > 0);
+  check.issues.forEach(function(issue) { assert.ok(!/_/.test(issue.fix), 'fix text is human-readable: ' + issue.fix); });
+})();
+console.log('Style brief formatting and readable check fixes verified.');

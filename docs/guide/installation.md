@@ -79,11 +79,12 @@ load an existing SVG and copy its style brief.
 ## Command line
 
 ```bash
-writelike-me analyze  [text] [-f file] [--brief]
-writelike-me generate [text] [-f file] [-o out.svg] [--width N] [--height N]
+writelike-me analyze  [text] [-f file]... [--brief]
+writelike-me generate [text] [-f file]... [-o out.svg] [--width N] [--height N] [--no-words] [--context email]
 writelike-me brief    --style-code me.svg
 writelike-me inspect  me.svg [--brief]
 writelike-me write    --style-code me.svg "Write a short paragraph about community gardens."
+writelike-me check  --style-code me.svg [draft text | -f draft.md | -] [--min 0.8] [--json]
 writelike-me compare  "reference text" "candidate text"
 writelike-me mcp
 ```
@@ -91,16 +92,19 @@ writelike-me mcp
 | Command | What it does |
 |---------|--------------|
 | `analyze` | Prints style scores as JSON. `--brief` prints only categories, classification and the brief. |
-| `generate` | Creates the SVG. Without `-o` it prints the markup; without text it uses the neutral default profile. |
+| `generate` | Creates the SVG. Without `-o` it prints the markup; without text it uses the neutral default profile. `--no-words` leaves frequent words and signature phrases out of the SVG (privacy). |
 | `brief` | Prints the style brief from an SVG (`--style-code`) or from text. |
 | `inspect` | Prints the profile stored in an SVG's metadata. |
 | `write` | Deterministic, template-based draft. Not a language model. |
+| `check` | Scores a draft against an SVG style code and lists the largest style gaps with fixes. Exits non-zero when below `--min`. |
 | `compare` | Heuristic style similarity (0–1) and per-signal differences. |
 | `mcp` | Starts the MCP server for AI coding agents. |
 
-Text can come from positional words, `-f/--file <path>`, or stdin with `-`
-(`cat post.md | writelike-me analyze - --brief`). In a checkout of this repository,
-use `npm run analyze -- "text"`, `npm run generate -- -o me.svg "text"`, and so on.
+Text can come from positional words, `-f/--file <path>` (repeatable; a directory
+reads its `.md`, `.txt` and `.markdown` files non-recursively, sorted), or stdin
+with `-` (`cat post.md | writelike-me analyze - --brief`). `generate --no-words`
+leaves frequent words and signature phrases out of the SVG. In a checkout of this
+repository, use `npm run analyze -- "text"`, `npm run generate -- -o me.svg "text"`, and so on.
 
 ## Imports
 
@@ -135,12 +139,18 @@ The SVG `<metadata>` carries a complete, versioned JSON profile:
 - **Style classification**: formality level, dominant mood, voice, pacing
 - **Domain**: business / technical / academic / creative / legal / medical / general
 - **Frequent words**: up to five `{ word, count }` entries
+- **Signature phrases**: up to five `{ phrase, count }` entries — repeated two-word sentence openers (optional, empty when none repeat)
+- **Context**: optional `context` string (email / blog / docs ...) stored in the SVG metadata and used to name per-context style codes (`style/<context>.svg`)
 
 v1 and v2 style codes are upgraded to v3 automatically when read.
 
 The SVG contains the profile and frequent words, **not** the original sample. Still,
 frequent words can reveal personal details, so inspect the file
-(`writelike-me inspect me.svg`) before sharing it.
+(`writelike-me inspect me.svg`) before sharing it. To share style signals without
+the words, generate with `generate --no-words` (CLI), `include_words: false`
+(MCP `generate_style_svg`), or `{ includeWords: false }` (`generateStyleSVG` /
+`createStyleProfile` in code); that empties `frequentWords` and
+`signaturePhrases` in the embedded profile.
 
 ## Limitations
 

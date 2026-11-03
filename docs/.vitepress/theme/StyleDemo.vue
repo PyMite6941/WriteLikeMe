@@ -8,6 +8,7 @@ const writeLikeMe = ref(null)
 const imported = ref(null)
 const importedName = ref('')
 const prompt = ref('Write a short update about the project launch.')
+const includeWords = ref(true)
 const draft = ref('')
 const fileInput = ref(null)
 
@@ -15,7 +16,7 @@ const profile = computed(() => {
   if (!writeLikeMe.value) return null
   return imported.value || writeLikeMe.value.createStyleProfile(writeLikeMe.value.analyzeText(text.value))
 })
-const svg = computed(() => profile.value ? writeLikeMe.value.generateStyleSVG(profile.value) : '')
+const svg = computed(() => profile.value ? writeLikeMe.value.generateStyleSVG(profile.value, undefined, undefined, { includeWords: includeWords.value }) : '')
 const brief = computed(() => profile.value ? writeLikeMe.value.describeStyle(profile.value) : '')
 const agentPrompt = computed(() => `Write in my personal style. Follow this style brief (from WriteLikeMe):\n\n${brief.value}\n\nKeep the meaning of my request; match the voice, not the topic.`)
 const code = `// npm install @ai-clyde/writelikeme
@@ -180,6 +181,10 @@ function writeDraft() {
         <h3>WriteLikeMe Code</h3>
         <div class="svg-preview" role="img" aria-label="QR-inspired code generated from the writing style profile" v-html="svg"></div>
         <div class="demo-actions">
+          <label style="display:inline-flex;align-items:center;margin:0 12px 0 0;font-weight:normal;font-size:0.9rem;color:#a9b6c8;">
+            <input type="checkbox" v-model="includeWords" style="margin-right:6px;">
+            Leave out frequent words (privacy)
+          </label>
           <button type="button" class="demo-primary" @click="downloadSvg">Download SVG</button>
           <button type="button" @click="copy(svg, 'SVG markup')">Copy SVG</button>
         </div>

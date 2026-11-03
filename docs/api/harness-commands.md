@@ -247,6 +247,21 @@ your draft as candidate. If similarity is below 0.85, revise once using the
 largestDifferences, and tell me the final score.
 ```
 
+**Check a draft in CI**
+
+```text
+Use the writelikeme check_draft tool with draft_path "<DRAFT.md>",
+style_code_path "style/me.svg" and min 0.75. Report the score and any fixes.
+```
+
+Equivalent CLI step for CI:
+
+```bash
+npx -y @ai-clyde/writelikeme check --style-code style/me.svg -f README.md --min 0.75
+```
+
+Exit code 1 when the score is below `--min`, so it fails the build on drift.
+
 **Restyle existing text**
 
 ```text
@@ -283,11 +298,12 @@ code or code comments.
 ## 5. CLI reference
 
 ```bash
-writelike-me analyze  [text] [-f file] [--brief]       # style scores (JSON)
-writelike-me generate [text] [-f file] [-o out.svg] [--width N] [--height N]
+writelike-me analyze  [text] [-f file]... [--brief]       # style scores (JSON)
+writelike-me generate [text] [-f file]... [-o out.svg] [--width N] [--height N] [--no-words]
 writelike-me brief    --style-code me.svg              # ~100-token style brief
 writelike-me inspect  me.svg [--brief]                 # profile stored in an SVG
 writelike-me write    --style-code me.svg "prompt"     # template draft, no AI
+writelike-me check  --style-code me.svg [draft text | -f draft.md | -] [--min 0.8] [--json]
 writelike-me compare  "reference" "candidate" [--brief]
 writelike-me compare  --reference-file a.md --candidate-file b.md
 writelike-me mcp                                       # MCP server over stdio
@@ -302,15 +318,29 @@ Without `-o`, `generate` prints the SVG to stdout. Run any of these with
 
 | Tool | Arguments | Returns |
 |------|-----------|---------|
-| `generate_style_svg` | `text` or `text_path`, `output_path`, `width`, `height` | file path, size, brief |
-| `describe_style` | `style_code_path`, `svg` or `text` | style brief (plain text) |
-| `analyze_text` | `text` or `text_path`, `full` | compact summary (full JSON if `full`) |
+| `generate_style_svg` | `text`, `text_path` or `text_paths`, `output_path`, `width`, `height`, `include_words` | file path, size, brief |
+| `describe_style` | `style_code_path`, `svg`, `text` or `text_paths` | style brief (plain text) |
+| `analyze_text` | `text`, `text_path` or `text_paths`, `full` | compact summary (full JSON if `full`) |
 | `read_style_code` | `style_code_path` or `svg`, `full` | compact summary of an SVG's profile |
 | `compare_styles` | `reference`/`reference_path`, `candidate`/`candidate_path` | similarity + 6 largest differences |
 | `write_like_me` | `prompt`, `style_code_path` or `svg` | template-based local draft |
+| `check_draft` | `draft` or `draft_path`, `style_code_path` or `svg`, `min` | score, pass flag, up to five issues with fixes |
 
 Relative paths resolve against the directory the harness starts the server in
 (normally the project root).
+
+## MCP prompts (slash commands)
+
+The server also advertises two MCP prompts, which clients such as Claude Code
+expose as slash commands: `/mcp__writelikeme__write_like_me` and
+`/mcp__writelikeme__check_my_draft`.
+
+| Prompt | Arguments | What it returns |
+|--------|-----------|-----------------|
+| `write_like_me` | `task` (required), `context` (optional) | The style brief from `style/<context>.svg` or `style/me.svg`, followed by an instruction to write `<task>` in that voice itself (without calling the template `write_like_me` tool). When no style code exists, it tells the model to call `generate_style_svg` on a writing sample first, then `describe_style`. |
+| `check_my_draft` | `draft` (required), `context` (optional) | Asks the model to call `check_draft` on the draft against `style/<context>.svg` or `style/me.svg` (pass threshold 0.8), and revise once using the listed fixes if it does not pass. |
+
+Unknown prompt names and missing required arguments return JSON-RPC error `-32602`.
 
 ## Troubleshooting
 
@@ -323,8 +353,8 @@ Relative paths resolve against the directory the harness starts the server in
 | Slow first start | `npx` downloads the package once. Pin it with `npm i -D @ai-clyde/writelikeme` and use `"command": "node", "args": ["node_modules/@ai-clyde/writelikeme/cli.js", "mcp"]`. |
 
 Verify a checkout of this repository with `npm test`. It covers the library, the Handler,
-every CLI command, a real MCP stdio session (all six tools, error paths and malformed
-input) and the contents of the published package.
+every CLI command, a real MCP stdio session (all six tools, two prompts, error paths and malformed
+input), the style-accuracy benchmark, and the contents of the published package.
 
 The server speaks MCP protocol versions 2024-11-05, 2025-03-26 and 2025-06-18 over
 stdio, and logs nothing to stdout except protocol messages.

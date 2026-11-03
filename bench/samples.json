@@ -1,0 +1,42 @@
+[
+  {
+    "name": "casual first-person blog",
+    "text": "Honestly, I didn't expect the trip to go this well. We missed the first train, so I grabbed coffee and we just wandered around the station for an hour. It's funny how the best parts of a trip are the ones you don't plan. I'd go back tomorrow if I could. My sister's already asking when we're going again, and I don't have an answer yet. I'm thinking spring. We'll see.",
+    "expect": { "voice": "first person", "contractions": "use", "sentences": "short" }
+  },
+  {
+    "name": "formal third-person report",
+    "text": "The committee reviewed the quarterly expenditure data submitted by each regional office. Expenditure exceeded the approved allocation in three regions, primarily as a consequence of unanticipated infrastructure maintenance. The committee recommends that regional directors submit revised forecasts prior to the next review period. Furthermore, procurement procedures should be standardised across all offices in order to ensure consistent reporting and appropriate oversight of contractual obligations.",
+    "expect": { "register": "formal", "voice": "third person", "contractions": "avoid", "sentences": "medium" }
+  },
+  {
+    "name": "chatty second-person tutorial",
+    "text": "Ready to make your first commit? Open your terminal and type git status. You'll see the files you changed in red. Want to save them? Type git add and the file name, then run git status again. See how they turned green? That means you've staged them. Now you can commit. Don't worry if you make a mistake, you can always undo it later.",
+    "expect": { "voice": "you", "contractions": "use", "questions": true }
+  },
+  {
+    "name": "excited marketing copy",
+    "text": "Meet the brand new Spark bottle! It keeps drinks cold for a full day! It fits every cup holder! It comes in twelve amazing colours! Grab yours today and get free shipping on every order! You are going to love it! Limited stock — order now before it's all gone! It's the perfect gift for anyone on your list. Shop the range today!",
+    "expect": { "exclamations": true, "sentences": "short" }
+  },
+  {
+    "name": "academic prose",
+    "text": "Although the relationship between socioeconomic status and educational attainment has been extensively documented, considerably less attention has been devoted to the mechanisms through which institutional characteristics mediate this association. This study therefore examines longitudinal administrative data from secondary schools, employing multilevel regression models that account for the hierarchical structure of the observations. The findings indicate that institutional resources substantially moderate the association, particularly among students from disadvantaged backgrounds.",
+    "expect": { "register": "formal", "contractions": "avoid", "sentences": "long", "voice": "third person" }
+  },
+  {
+    "name": "terse technical notes",
+    "text": "Server restarted at noon. Cache cleared. Memory usage dropped to forty percent. Disk still near full. Logs rotated manually. Backup job failed twice. Root cause unknown. Next step: check the cron schedule. Ticket updated. Escalate to the on-call team if it happens again. Review the runbook before the next shift. Pager duty acknowledged; monitor CPU and memory for the next hour.",
+    "expect": { "sentences": "short", "contractions": "avoid", "voice": "third person" }
+  },
+  {
+    "name": "hedging cautious memo",
+    "text": "Based on the figures available, it appears the rollout is probably on schedule, though delays seem possible. Furthermore, regarding the launch date, perhaps the assumptions should be revisited before a final decision is made. It would also be sensible to share an updated memo next week, pending further review from the product and engineering leads. Please confirm receipt of this memo by Friday.",
+    "expect": { "register": "formal", "voice": "third person", "contractions": "avoid", "hedging": true }
+  },
+  {
+    "name": "narrative fiction with dialogue",
+    "text": "The rain hammered the rooftop all evening. Eliza peered through the window and frowned. 'I told you not to go,' she said, her voice barely audible over the storm. He shook his head and smiled. 'I had to try,' he answered. 'Stay,' she whispered. She didn't answer; she just watched the water run down the glass in crooked lines, thinking of the walk they had missed.",
+    "expect": { "register": "neutral", "voice": "third person", "contractions": "occasional", "dialogue": true }
+  }
+]
