@@ -60,8 +60,20 @@ var IMAGERY_WORDS = new Set([
   'bloom', 'bright', 'dance', 'dream', 'glow', 'luminous', 'magic', 'magical',
   'ocean', 'shadow', 'shimmer', 'whisper', 'wonder', 'vivid'
 ]);
-var FIRST_PERSON_WORDS = new Set(['i', 'me', 'my', 'mine', 'we', 'us', 'our', 'ours']);
-var SECOND_PERSON_WORDS = new Set(['you', 'your', 'yours']);
+function withContractions(words, contracted) {
+  contracted.forEach(function(word) {
+    words.push(word, word.replace("'", '’'));
+  });
+  return new Set(words);
+}
+var FIRST_PERSON_WORDS = withContractions(
+  ['i', 'me', 'my', 'mine', 'myself', 'we', 'us', 'our', 'ours', 'ourselves'],
+  ["i'm", "i've", "i'll", "i'd", "we're", "we've", "we'll", "we'd"]
+);
+var SECOND_PERSON_WORDS = withContractions(
+  ['you', 'your', 'yours', 'yourself', 'yourselves'],
+  ["you're", "you've", "you'll", "you'd"]
+);
 var TRANSITION_WORDS = new Set([
   'also', 'although', 'because', 'besides', 'consequently', 'finally',
   'first', 'furthermore', 'however', 'instead', 'meanwhile', 'moreover',
@@ -1090,7 +1102,7 @@ exports.writeLikeMe = function(prompt, styleCode) {
   var perspective = firstPerson
     ? (contractions ? "I think it's" : 'I think it is')
     : secondPerson
-      ? (contractions ? "you'll find it's" : 'you will find it is')
+      ? (contractions ? "you'll notice it's" : 'you will notice it is')
       : (contractions ? "it's" : 'it is');
   var reflection = perspective + ' worth paying attention to the details';
   if (useComma) {
@@ -1121,7 +1133,9 @@ exports.writeLikeMe = function(prompt, styleCode) {
     : signals.sentence_variation >= 0.45
       ? [opening, reflection, action]
       : [opening, action, reflection];
-  return sentences.join(' ');
+  return sentences.map(function(sentence) {
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+  }).join(' ');
 };
 
 // Compact, plain-language style brief. Designed to be pasted into an LLM or

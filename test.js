@@ -139,6 +139,18 @@ assert.ok(voice.contraction_rate > 0);
 assert.ok(analyzeText('I’m ready.').contraction_rate > 0);
 assert.ok(analyzeText("That's it. Here's why it's done.").contraction_rate > 0, "'s contractions count");
 assert.strictEqual(analyzeText("John's report and the team's plan are ready.").contraction_rate, 0, 'possessives are not contractions');
+assert.ok(analyzeText("I've done it. I'm sure I'll do it again.").first_person > 0, 'contracted first-person pronouns count');
+assert.ok(analyzeText('You’re right, you’ll see.').second_person > 0, 'curly contracted second-person pronouns count');
+(function() {
+  var W = require('./index.js');
+  var vivid = W.createStyleProfile({ categories: { creativity: 0.9, sentence_length: 0.5 }, signals: { sentence_variation: 0.6 } });
+  var casual = W.createStyleProfile(analyzeText("Honestly, I think you'll like it. You build it, you ship it. That's it. Here's what I've learned: don't overthink it."));
+  [vivid, casual].forEach(function(profile) {
+    W.writeLikeMe('Write a note about our garden.', profile).split(/(?<=[.!?])\s+/).forEach(function(sentence) {
+      assert.match(sentence, /^[A-Z]/, 'draft sentences start with a capital: ' + sentence);
+    });
+  });
+})();
 assert.match(require("./index.js").describeStyle(analyzeText("Honestly, I think it's simple. You build it, you ship it, and that's it. I didn't plan much. Here's what I've learned: don't overthink it, and you'll be fine.")), /use contractions/);
 assert.ok(voice.sentence_variation > 0);
 assert.ok(voice.paragraph_length > analyzeText('A short line.\n\nAnother short line.').paragraph_length);
@@ -257,7 +269,7 @@ const secondPersonDraft = writeLikeMe('Explain why clear writing matters.', {
     contraction_rate: 1
   }
 });
-assert.match(secondPersonDraft, /you'll find it's worth/i);
+assert.match(secondPersonDraft, /you'll notice it's worth/i);
 
 const styleCodePath = path.join(os.tmpdir(), 'writelikeme-style-' + process.pid + '.svg');
 fs.writeFileSync(styleCodePath, styleCode);
