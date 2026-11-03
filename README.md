@@ -294,6 +294,6 @@ merging to `main` publishes the new version to npm.
 
 ## 📄 License
 
-[MIT](https://opensource.org/licenses/MIT)
+[MIT](LICENSE)
 
 Copyright (c) 2024 Clyde AI Project

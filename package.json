@@ -1,7 +1,7 @@
 {
   "name": "@ai-clyde/writelikeme",
   "version": "1.2.0",
-  "description": "Analyze writing locally, share style profiles in SVG metadata, and create deterministic style-guided drafts without an external AI service.",
+  "description": "Capture your writing style as a portable SVG style code and have any AI agent write like you. Offline analyzer, CLI and MCP server for Claude Code, Cursor, Codex and more.",
   "main": "index.js",
   "files": [
     "cli.js",
@@ -41,7 +41,11 @@
     "claude-code",
     "cursor",
     "codex",
-    "agent"
+    "agent",
+    "style-guide",
+    "writing-style",
+    "llm",
+    "ai-agents"
   ],
   "author": "Clyde AI Project",
   "license": "MIT",
@@ -58,5 +62,8 @@
   },
   "overrides": {
     "vite": "6.4.4"
+  },
+  "bugs": {
+    "url": "https://github.com/PyMite6941/WriteLikeMe/issues"
   }
 }

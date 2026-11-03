@@ -1,5 +1,5 @@
-import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
+import { strict as assert } from 'assert';
+import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const WriteLikeMe = require('./index.js');
