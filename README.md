@@ -229,6 +229,16 @@ npm install @ai-clyde/writelikeme
 
 Pull requests are welcome. Please open an issue first to discuss what you'd like to change.
 
+```bash
+npm test             # library, Handler, CLI, MCP server (real stdio session), package contents
+npm run docs:dev     # docs site with the live demo at http://localhost:5173/WriteLikeMe/
+npm run docs:build
+```
+
+CI runs `npm test` on Node 14–24 (Linux, Windows, macOS) for every push and pull request.
+To release, bump `version` in `package.json` and add a [CHANGELOG](CHANGELOG.md) entry;
+merging to `main` publishes the new version to npm.
+
 ## 📄 License
 
 [MIT](https://opensource.org/licenses/MIT)

@@ -1,12 +1,18 @@
 name: Publish @ai-clyde/writelikeme to npm
 
+# Publishes when package.json changes on main (i.e. a version bump) and that
+# version isn't on npm yet. Uses npm trusted publishing (OIDC): no token needed.
+# One-time setup on npmjs.com: package Settings -> Trusted Publisher ->
+# GitHub Actions, repository PyMite6941/WriteLikeMe, workflow publish.yml.
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths: [package.json]
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -19,11 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Update npm (trusted publishing needs npm 11.5+)
+        run: npm install --global npm@latest
 
       - name: Run package tests
         run: npm test
@@ -33,15 +38,11 @@ jobs:
         run: |
           if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "This version is already on npm; nothing to publish."
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish to npm
         if: steps.check.outputs.published == 'false'
-        # Token auth. To switch to npm trusted publishing instead, add this repo and
-        # workflow (publish.yml) as a trusted publisher on npmjs.com, restore
-        # `id-token: write`, and use `npm publish --provenance --access public`.
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

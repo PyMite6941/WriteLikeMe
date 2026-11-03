@@ -81,14 +81,23 @@ const TOOLS = [
   }
 ];
 
+function readFile(file) {
+  const resolved = path.resolve(file);
+  try {
+    return fs.readFileSync(resolved, 'utf8');
+  } catch (error) {
+    throw new Error(`Could not read ${resolved}: ${error.code === 'ENOENT' ? 'file not found' : error.message}`);
+  }
+}
+
 function readText(args, key) {
-  if (args[key + '_path']) return fs.readFileSync(path.resolve(args[key + '_path']), 'utf8');
+  if (args[key + '_path']) return readFile(args[key + '_path']);
   if (typeof args[key] === 'string' && args[key].trim()) return args[key];
   throw new Error(`Provide ${key} or ${key}_path.`);
 }
 
 function loadProfile(args, allowText) {
-  if (args.style_code_path) return WriteLikeMe.readStyleCode(fs.readFileSync(path.resolve(args.style_code_path), 'utf8'));
+  if (args.style_code_path) return WriteLikeMe.readStyleCode(readFile(args.style_code_path));
   if (args.svg) return WriteLikeMe.readStyleCode(args.svg);
   if (allowText && args.text) return WriteLikeMe.createStyleProfile(WriteLikeMe.analyzeText(args.text));
   throw new Error('Provide style_code_path or svg' + (allowText ? ', or text.' : '.'));
@@ -114,8 +123,9 @@ const HANDLERS = {
     const svg = WriteLikeMe.generateStyleSVG(analysis, args.width, args.height);
     const output = path.resolve(args.output_path || 'writelikeme-code.svg');
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, svg + '\n');
-    return { path: output, bytes: svg.length, brief: WriteLikeMe.describeStyle(analysis) };
+    const contents = svg + '\n';
+    fs.writeFileSync(output, contents);
+    return { path: output, bytes: Buffer.byteLength(contents), brief: WriteLikeMe.describeStyle(analysis) };
   },
   describe_style(args) {
     return WriteLikeMe.describeStyle(loadProfile(args, true));
@@ -181,6 +191,11 @@ function start(input = process.stdin, output = process.stdout) {
       message = JSON.parse(line);
     } catch (error) {
       return send({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } });
+    }
+    const isObject = message !== null && typeof message === 'object' && !Array.isArray(message);
+    if (!isObject || typeof message.method !== 'string') {
+      const id = isObject && message.id !== undefined ? message.id : null;
+      return send({ jsonrpc: '2.0', id, error: { code: -32600, message: 'Invalid Request' } });
     }
     if (message.id === undefined || message.id === null) {
       try { handle(message); } catch (error) { /* notifications never get replies */ }

@@ -1,6 +1,6 @@
 {
   "name": "@ai-clyde/writelikeme",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Analyze writing locally, share style profiles in SVG metadata, and create deterministic style-guided drafts without an external AI service.",
   "main": "index.js",
   "files": [
@@ -11,11 +11,13 @@
     "README.md"
   ],
   "scripts": {
-    "test": "node test.js && node handler.test.js && node mcp.test.js && node verify.mjs",
+    "test": "node test.js && node handler.test.js && node mcp.test.js && node package.test.js && node verify.mjs",
     "generate": "node cli.js generate",
     "analyze": "node cli.js analyze",
     "write": "node cli.js write",
     "docs:build": "node scripts/copy-browser.js && vitepress build docs",
+    "docs:dev": "node scripts/copy-browser.js && vitepress dev docs",
+    "docs:preview": "vitepress preview docs",
     "brief": "node cli.js brief",
     "mcp": "node cli.js mcp"
   },

@@ -35,7 +35,8 @@ export default {
           text: 'Getting Started',
           items: [
             { text: 'Installation', link: '/guide/installation' },
-            { text: 'AI harnesses', link: '/api/harness-commands' }
+            { text: 'AI harnesses', link: '/api/harness-commands' },
+            { text: 'Changelog', link: '/guide/changelog' }
           ]
         }
       ],

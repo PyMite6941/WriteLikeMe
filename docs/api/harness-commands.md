@@ -318,9 +318,13 @@ Relative paths resolve against the directory the harness starts the server in
 |---------|-----|
 | Server shows as failed or disconnected | Run `npx -y @ai-clyde/writelikeme --version` in a terminal. If that fails, install Node.js 18+ and check that `npx` is on the PATH the harness sees. |
 | `spawn npx ENOENT` on Windows | Use the `cmd /c` form above. |
-| `Could not read …/style/me.svg` | Paths are relative to the server's working directory. Use an absolute path or open the harness in the project root. |
+| `Could not read …/style/me.svg: file not found` | Paths are relative to the server's working directory. Use an absolute path or open the harness in the project root. |
 | `Unsupported or invalid … version` | The SVG wasn't made by WriteLikeMe, or was edited. Regenerate it. |
 | Slow first start | `npx` downloads the package once. Pin it with `npm i -D @ai-clyde/writelikeme` and use `"command": "node", "args": ["node_modules/@ai-clyde/writelikeme/cli.js", "mcp"]`. |
 
-Verify a checkout of this repository with `npm test`, which covers the library,
-Handler, CLI and an end-to-end MCP session.
+Verify a checkout of this repository with `npm test`. It covers the library, the Handler,
+every CLI command, a real MCP stdio session (all six tools, error paths and malformed
+input) and the contents of the published package.
+
+The server speaks MCP protocol versions 2024-11-05, 2025-03-26 and 2025-06-18 over
+stdio, and logs nothing to stdout except protocol messages.
